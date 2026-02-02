@@ -1,3 +1,5 @@
+import Board from "@/components/kanban/Board";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50">
@@ -17,9 +19,7 @@ export default function Home() {
         </div>
       </header>
       <main className="mx-auto w-full max-w-6xl px-6 py-10">
-        <section className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-slate-600">
-          Aqui vivira el tablero Kanban, filtros y auditoria.
-        </section>
+        <Board />
       </main>
     </div>
   );
