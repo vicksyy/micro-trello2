@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Task } from "@/types";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Pencil, Trash2 } from "lucide-react";
 
 type TaskCardProps = {
@@ -17,8 +19,30 @@ const priorityStyles: Record<Task["prioridad"], string> = {
 };
 
 export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <article
+      ref={setNodeRef}
+      style={style}
+      className={`rounded-xl border bg-white p-4 shadow-sm ${
+        isDragging ? "border-slate-400 opacity-70" : "border-slate-200"
+      }`}
+      {...attributes}
+      {...listeners}
+    >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-sm font-semibold text-slate-900">{task.titulo}</h3>
         <div className="flex items-center gap-2">

@@ -16,7 +16,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { getInitialState, writeState } from "@/lib/storage";
-import { BoardState, Task, TaskStatus } from "@/types";
+import { AuditEvent, BoardState, Task, TaskStatus } from "@/types";
+import {
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 import { v4 as uuidv4 } from "uuid";
 import { useEffect, useMemo, useState } from "react";
 
@@ -31,6 +40,7 @@ export default function Board() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor));
 
   useEffect(() => {
     setState(getInitialState());
@@ -48,11 +58,22 @@ export default function Board() {
       done: [],
     } as Record<TaskStatus, BoardState["tasks"]>;
     if (!state) return base;
-    return state.tasks.reduce((acc, task) => {
+    const grouped = state.tasks.reduce((acc, task) => {
       acc[task.estado].push(task);
       return acc;
     }, base);
+    (Object.keys(grouped) as TaskStatus[]).forEach((status) => {
+      grouped[status].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    });
+    return grouped;
   }, [state]);
+
+  const getNextOrder = (status: TaskStatus) => {
+    if (!state) return 1;
+    const items = state.tasks.filter((task) => task.estado === status);
+    if (items.length === 0) return 1;
+    return Math.max(...items.map((task) => task.orden ?? 0)) + 1;
+  };
 
   const handleCreate = (values: TaskFormValues) => {
     if (!state) return;
@@ -73,16 +94,29 @@ export default function Board() {
       fechaCreacion: now,
       fechaLimite: values.fechaLimite || undefined,
       estado: values.estado,
+      orden: getNextOrder(values.estado),
+    };
+    const auditEvent: AuditEvent = {
+      id: uuidv4(),
+      timestamp: now,
+      accion: "CREATE",
+      taskId: nextTask.id,
+      diff: {
+        after: nextTask,
+      },
+      userLabel: "Alumno/a",
     };
     setState({
       ...state,
       tasks: [nextTask, ...state.tasks],
+      auditLog: [auditEvent, ...state.auditLog],
     });
     setCreateOpen(false);
   };
 
   const handleEdit = (values: TaskFormValues) => {
     if (!state || !editTask) return;
+    const now = new Date().toISOString();
     const tags = values.tags
       ? values.tags
           .split(",")
@@ -99,22 +133,121 @@ export default function Board() {
       fechaLimite: values.fechaLimite || undefined,
       estado: values.estado,
     };
+    const auditEvent: AuditEvent = {
+      id: uuidv4(),
+      timestamp: now,
+      accion: "UPDATE",
+      taskId: editTask.id,
+      diff: {
+        before: editTask,
+        after: updated,
+      },
+      userLabel: "Alumno/a",
+    };
     setState({
       ...state,
       tasks: state.tasks.map((task) =>
         task.id === editTask.id ? updated : task
       ),
+      auditLog: [auditEvent, ...state.auditLog],
     });
     setEditTask(null);
   };
 
   const confirmDelete = () => {
     if (!state || !deleteTask) return;
+    const auditEvent: AuditEvent = {
+      id: uuidv4(),
+      timestamp: new Date().toISOString(),
+      accion: "DELETE",
+      taskId: deleteTask.id,
+      diff: {
+        before: deleteTask,
+      },
+      userLabel: "Alumno/a",
+    };
     setState({
       ...state,
       tasks: state.tasks.filter((task) => task.id !== deleteTask.id),
+      auditLog: [auditEvent, ...state.auditLog],
     });
     setDeleteTask(null);
+  };
+
+  const applyOrder = (tasks: Task[], orderedIds: string[]) => {
+    const orderMap = new Map(
+      orderedIds.map((id, index) => [id, index + 1])
+    );
+    return tasks.map((task) =>
+      orderMap.has(task.id) ? { ...task, orden: orderMap.get(task.id)! } : task
+    );
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    if (!state) return;
+    const { active, over } = event;
+    if (!over) return;
+    const taskId = String(active.id);
+    const activeTask = state.tasks.find((task) => task.id === taskId);
+    if (!activeTask) return;
+    const overId = String(over.id);
+    const overTask = state.tasks.find((task) => task.id === overId);
+    const nextStatus = overTask ? overTask.estado : (overId as TaskStatus);
+    if (!nextStatus) return;
+
+    if (activeTask.estado === nextStatus && overTask) {
+      const columnTasks = tasksByStatus[nextStatus];
+      const oldIndex = columnTasks.findIndex((task) => task.id === taskId);
+      const newIndex = columnTasks.findIndex((task) => task.id === overId);
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+      const reordered = arrayMove(columnTasks, oldIndex, newIndex);
+      const orderedIds = reordered.map((task) => task.id);
+      setState({
+        ...state,
+        tasks: applyOrder(state.tasks, orderedIds),
+      });
+      return;
+    }
+
+    const previousTask = state.tasks.find((task) => task.id === taskId);
+    if (!previousTask || previousTask.estado === nextStatus) return;
+    const sourceTasks = tasksByStatus[previousTask.estado]
+      .filter((task) => task.id !== taskId)
+      .map((task) => task.id);
+    let targetTasks = tasksByStatus[nextStatus].map((task) => task.id);
+    if (overTask) {
+      const overIndex = targetTasks.indexOf(overTask.id);
+      if (overIndex >= 0) {
+        targetTasks.splice(overIndex, 0, taskId);
+      } else {
+        targetTasks.push(taskId);
+      }
+    } else {
+      targetTasks.push(taskId);
+    }
+    const movedTasks = state.tasks.map((task) =>
+      task.id === taskId ? { ...task, estado: nextStatus } : task
+    );
+    const withSourceOrder = applyOrder(movedTasks, sourceTasks);
+    const withTargetOrder = applyOrder(withSourceOrder, targetTasks);
+    const updatedTask = withTargetOrder.find((task) => task.id === taskId);
+    if (!updatedTask) return;
+    const auditEvent: AuditEvent = {
+      id: uuidv4(),
+      timestamp: new Date().toISOString(),
+      accion: "MOVE",
+      taskId,
+      diff: {
+        before: { estado: previousTask.estado },
+        after: { estado: updatedTask.estado },
+      },
+      userLabel: "Alumno/a",
+    };
+    setState({
+      ...state,
+      tasks: withTargetOrder,
+      auditLog: [auditEvent, ...state.auditLog],
+    });
   };
 
   if (!state) {
@@ -138,18 +271,24 @@ export default function Board() {
         </div>
         <Button onClick={() => setCreateOpen(true)}>Nueva tarea</Button>
       </div>
-      <div className="grid gap-6 lg:grid-cols-3">
-        {columnMeta.map((column) => (
-          <Column
-            key={column.status}
-            title={column.title}
-            status={column.status}
-            tasks={tasksByStatus[column.status]}
-            onEditTask={setEditTask}
-            onDeleteTask={setDeleteTask}
-          />
-        ))}
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid gap-6 lg:grid-cols-3">
+          {columnMeta.map((column) => (
+            <Column
+              key={column.status}
+              title={column.title}
+              status={column.status}
+              tasks={tasksByStatus[column.status]}
+              onEditTask={setEditTask}
+              onDeleteTask={setDeleteTask}
+            />
+          ))}
+        </div>
+      </DndContext>
       <TaskFormDialog
         open={createOpen}
         title="Nueva tarea"

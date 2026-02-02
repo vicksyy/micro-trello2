@@ -11,6 +11,7 @@ export type Task = {
   fechaCreacion: string;
   fechaLimite?: string;
   estado: TaskStatus;
+  orden: number;
   observacionesJavi?: string;
   rubricaScore?: number;
   rubricaComentario?: string;

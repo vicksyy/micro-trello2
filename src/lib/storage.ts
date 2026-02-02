@@ -14,6 +14,7 @@ const seedState: BoardState = {
       fechaCreacion: "2026-02-02T08:10:00.000Z",
       fechaLimite: "2026-02-02T12:00:00.000Z",
       estado: "todo",
+      orden: 1,
     },
     {
       id: "seed-2",
@@ -24,6 +25,7 @@ const seedState: BoardState = {
       estimacionMin: 60,
       fechaCreacion: "2026-02-02T08:15:00.000Z",
       estado: "todo",
+      orden: 2,
     },
     {
       id: "seed-3",
@@ -35,6 +37,7 @@ const seedState: BoardState = {
       fechaCreacion: "2026-02-02T08:20:00.000Z",
       fechaLimite: "2026-02-03T16:00:00.000Z",
       estado: "doing",
+      orden: 1,
     },
     {
       id: "seed-4",
@@ -45,6 +48,7 @@ const seedState: BoardState = {
       estimacionMin: 20,
       fechaCreacion: "2026-02-02T08:25:00.000Z",
       estado: "doing",
+      orden: 2,
     },
     {
       id: "seed-5",
@@ -55,6 +59,7 @@ const seedState: BoardState = {
       estimacionMin: 25,
       fechaCreacion: "2026-02-02T08:30:00.000Z",
       estado: "done",
+      orden: 1,
     },
     {
       id: "seed-6",
@@ -65,6 +70,7 @@ const seedState: BoardState = {
       estimacionMin: 40,
       fechaCreacion: "2026-02-02T08:32:00.000Z",
       estado: "done",
+      orden: 2,
     },
   ],
   auditLog: [],
