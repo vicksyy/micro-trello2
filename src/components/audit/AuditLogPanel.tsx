@@ -19,11 +19,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AuditAction, AuditEvent } from "@/types";
+import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
 type AuditLogPanelProps = {
   auditLog: AuditEvent[];
+  tasks: { id: string; titulo: string }[];
 };
 
 type ActionFilter = "ALL" | AuditAction;
@@ -43,17 +45,29 @@ const actionVariant: Record<AuditAction, "default" | "secondary" | "destructive"
     DELETE: "destructive",
   };
 
-export default function AuditLogPanel({ auditLog }: AuditLogPanelProps) {
+export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
   const [actionFilter, setActionFilter] = useState<ActionFilter>("ALL");
   const [taskFilter, setTaskFilter] = useState("");
+
+  const titleById = useMemo(() => {
+    return new Map(tasks.map((task) => [task.id, task.titulo]));
+  }, [tasks]);
+
+  const getTitleFromEvent = (event: AuditEvent) => {
+    const before = event.diff.before as Partial<Record<string, unknown>> | undefined;
+    const after = event.diff.after as Partial<Record<string, unknown>> | undefined;
+    const beforeTitle = typeof before?.titulo === "string" ? before.titulo : "";
+    const afterTitle = typeof after?.titulo === "string" ? after.titulo : "";
+    return afterTitle || beforeTitle || titleById.get(event.taskId) || "";
+  };
 
   const filteredLog = useMemo(() => {
     return auditLog.filter((event) => {
       const matchAction =
         actionFilter === "ALL" ? true : event.accion === actionFilter;
-      const matchTask = taskFilter
-        ? event.taskId.toLowerCase().includes(taskFilter.toLowerCase())
-        : true;
+      const title = getTitleFromEvent(event);
+      const haystack = `${event.taskId} ${title}`.toLowerCase();
+      const matchTask = taskFilter ? haystack.includes(taskFilter.toLowerCase()) : true;
       return matchAction && matchTask;
     });
   }, [auditLog, actionFilter, taskFilter]);
@@ -114,12 +128,13 @@ export default function AuditLogPanel({ auditLog }: AuditLogPanelProps) {
         {keys.map((key) => (
           <div
             key={key}
-            className="grid grid-cols-[120px_1fr_1fr] gap-2 text-xs"
+            className="grid grid-cols-[60px_1fr_auto_1fr] items-center gap-1 text-xs"
           >
-            <span className="font-medium text-slate-600">{key}</span>
+            <span className="truncate font-medium text-slate-600">{key}</span>
             <span className="rounded-md bg-slate-50 px-2 py-1 text-slate-600">
               {renderValue((before as Record<string, unknown>)[key])}
             </span>
+            <ArrowRight className="h-4 w-4 text-slate-400" />
             <span className="rounded-md bg-emerald-50 px-2 py-1 text-emerald-700">
               {renderValue((after as Record<string, unknown>)[key])}
             </span>
@@ -164,7 +179,7 @@ export default function AuditLogPanel({ auditLog }: AuditLogPanelProps) {
         </div>
         <Input
           className="max-w-xs"
-          placeholder="Filtrar por taskId"
+          placeholder="Filtrar por taskId o titulo"
           value={taskFilter}
           onChange={(event) => setTaskFilter(event.target.value)}
         />
@@ -187,13 +202,14 @@ export default function AuditLogPanel({ auditLog }: AuditLogPanelProps) {
               <TableHead>Timestamp</TableHead>
               <TableHead>Accion</TableHead>
               <TableHead>TaskId</TableHead>
+              <TableHead>Tarea</TableHead>
               <TableHead>Diff</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredLog.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="py-8 text-center text-sm">
+                <TableCell colSpan={5} className="py-8 text-center text-sm">
                   Sin eventos para estos filtros.
                 </TableCell>
               </TableRow>
@@ -210,6 +226,9 @@ export default function AuditLogPanel({ auditLog }: AuditLogPanelProps) {
                   </TableCell>
                   <TableCell className="text-xs text-slate-600">
                     {event.taskId}
+                  </TableCell>
+                  <TableCell className="text-xs text-slate-600">
+                    {getTitleFromEvent(event) || "—"}
                   </TableCell>
                   <TableCell className="text-xs text-slate-600">
                     {renderDiff(event)}

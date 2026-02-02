@@ -32,6 +32,14 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { v4 as uuidv4 } from "uuid";
 import { useEffect, useMemo, useState } from "react";
 import TaskCardPreview from "@/components/kanban/TaskCardPreview";
+import { filterTasks } from "@/lib/query";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 
 const columnMeta: Array<{ title: string; status: TaskStatus }> = [
   { title: "Todo", status: "todo" },
@@ -53,6 +61,7 @@ export default function Board({ state, setState }: BoardProps) {
     width: number;
     height: number;
   } | null>(null);
+  const [query, setQuery] = useState("");
   const sensors = useSensors(useSensor(PointerSensor));
 
   useEffect(() => {
@@ -67,7 +76,8 @@ export default function Board({ state, setState }: BoardProps) {
       done: [],
     } as Record<TaskStatus, BoardState["tasks"]>;
     if (!state) return base;
-    const grouped = state.tasks.reduce((acc, task) => {
+    const filtered = query ? filterTasks(state.tasks, query) : state.tasks;
+    const grouped = filtered.reduce((acc, task) => {
       acc[task.estado].push(task);
       return acc;
     }, base);
@@ -75,7 +85,7 @@ export default function Board({ state, setState }: BoardProps) {
       grouped[status].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     });
     return grouped;
-  }, [state]);
+  }, [state, query]);
 
   const getNextOrder = (status: TaskStatus) => {
     if (!state) return 1;
@@ -276,7 +286,7 @@ export default function Board({ state, setState }: BoardProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">
             Tablero operativo
@@ -285,7 +295,41 @@ export default function Board({ state, setState }: BoardProps) {
             Crea, edita y organiza tareas por columna.
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>Nueva tarea</Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Input
+              className="w-64"
+              placeholder="Buscar y filtrar..."
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              aria-label="Buscar tareas"
+            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Ayuda
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72">
+                <div className="space-y-3 text-sm">
+                  <p className="font-medium text-slate-900">Ejemplos:</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="secondary">tag:macro</Badge>
+                    <Badge variant="secondary">p:high</Badge>
+                    <Badge variant="secondary">due:overdue</Badge>
+                    <Badge variant="secondary">due:week</Badge>
+                    <Badge variant="secondary">est:&lt;60</Badge>
+                    <Badge variant="secondary">est:&gt;=120</Badge>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Texto libre busca en titulo y descripcion.
+                  </p>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <Button onClick={() => setCreateOpen(true)}>Nueva tarea</Button>
+        </div>
       </div>
       <DndContext
         sensors={sensors}
