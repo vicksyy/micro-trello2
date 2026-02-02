@@ -1,11 +1,12 @@
 import { BoardState } from "@/types";
+import { v4 as uuidv4 } from "uuid";
 
 const STORAGE_KEY = "micro-kanban-state";
 
-const seedState: BoardState = {
+const createSeedState = (): BoardState => ({
   tasks: [
     {
-      id: "seed-1",
+      id: uuidv4(),
       titulo: "Revisar apertura de mercado Asia",
       descripcion: "Validar gaps y liquidez en pares principales.",
       prioridad: "high",
@@ -17,7 +18,7 @@ const seedState: BoardState = {
       orden: 1,
     },
     {
-      id: "seed-2",
+      id: uuidv4(),
       titulo: "Actualizar niveles de riesgo semanal",
       descripcion: "Recalcular exposición por sector y beta.",
       prioridad: "medium",
@@ -28,7 +29,7 @@ const seedState: BoardState = {
       orden: 2,
     },
     {
-      id: "seed-3",
+      id: uuidv4(),
       titulo: "Preparar reporte de volatilidad",
       descripcion: "Incluye VIX, skew y correlaciones clave.",
       prioridad: "high",
@@ -40,7 +41,7 @@ const seedState: BoardState = {
       orden: 1,
     },
     {
-      id: "seed-4",
+      id: uuidv4(),
       titulo: "Revisión de alertas macro",
       descripcion: "Chequear CPI, PMI y comentarios de la Fed.",
       prioridad: "low",
@@ -51,7 +52,7 @@ const seedState: BoardState = {
       orden: 2,
     },
     {
-      id: "seed-5",
+      id: uuidv4(),
       titulo: "Enviar resumen diario al equipo",
       descripcion: "Incluye top movers y riesgos abiertos.",
       prioridad: "medium",
@@ -62,7 +63,7 @@ const seedState: BoardState = {
       orden: 1,
     },
     {
-      id: "seed-6",
+      id: uuidv4(),
       titulo: "Auditar cambios de stops",
       descripcion: "Verificar ejecuciones y slippage.",
       prioridad: "low",
@@ -77,14 +78,34 @@ const seedState: BoardState = {
   godMode: {
     enabled: false,
   },
-};
+});
 
 const isBrowser = () => typeof window !== "undefined";
 
+const uuidRegex =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const normalizeState = (state: BoardState): BoardState => {
+  const idMap = new Map<string, string>();
+  const normalizedTasks = state.tasks.map((task) => {
+    if (uuidRegex.test(task.id)) return task;
+    const nextId = uuidv4();
+    idMap.set(task.id, nextId);
+    return { ...task, id: nextId };
+  });
+  if (idMap.size === 0) return state;
+  const normalizedAudit = state.auditLog.map((event) => {
+    const mappedId = idMap.get(event.taskId);
+    return mappedId ? { ...event, taskId: mappedId } : event;
+  });
+  return { ...state, tasks: normalizedTasks, auditLog: normalizedAudit };
+};
+
 export const getInitialState = (): BoardState => {
-  if (!isBrowser()) return seedState;
+  if (!isBrowser()) return createSeedState();
   const stored = readState();
-  return stored ?? seedState;
+  if (!stored) return createSeedState();
+  return normalizeState(stored);
 };
 
 export const readState = (): BoardState | null => {

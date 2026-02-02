@@ -53,6 +53,8 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
     return new Map(tasks.map((task) => [task.id, task.titulo]));
   }, [tasks]);
 
+  const shortId = (id: string) => id.slice(0, 8);
+
   const getTitleFromEvent = (event: AuditEvent) => {
     const before = event.diff.before as Partial<Record<string, unknown>> | undefined;
     const after = event.diff.after as Partial<Record<string, unknown>> | undefined;
@@ -66,7 +68,7 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
       const matchAction =
         actionFilter === "ALL" ? true : event.accion === actionFilter;
       const title = getTitleFromEvent(event);
-      const haystack = `${event.taskId} ${title}`.toLowerCase();
+      const haystack = `${event.taskId} ${shortId(event.taskId)} ${title}`.toLowerCase();
       const matchTask = taskFilter ? haystack.includes(taskFilter.toLowerCase()) : true;
       return matchAction && matchTask;
     });
@@ -118,11 +120,10 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
 
   const renderDiff = (event: AuditEvent) => {
     if (event.accion === "DELETE") {
-      return (
-        <span className="text-xs text-slate-600">
-          Tarea eliminada.
-        </span>
-      );
+      return <span className="text-xs text-slate-600">Tarea eliminada.</span>;
+    }
+    if (event.accion === "CREATE") {
+      return <span className="text-xs text-slate-600">Tarea creada.</span>;
     }
     const before = event.diff.before ?? {};
     const after = event.diff.after ?? {};
@@ -232,7 +233,7 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs text-slate-600">
-                    {event.taskId}
+                    {shortId(event.taskId)}
                   </TableCell>
                   <TableCell className="text-xs text-slate-600">
                     {getTitleFromEvent(event) || "—"}
