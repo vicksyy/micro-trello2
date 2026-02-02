@@ -41,8 +41,12 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         isDragging ? "border-slate-400 opacity-70" : "border-slate-200"
       }`}
       {...attributes}
-      {...listeners}
     >
+      <div
+        className="cursor-grab"
+        {...listeners}
+        aria-label="Arrastrar tarea"
+      >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-sm font-semibold text-slate-900">{task.titulo}</h3>
         <div className="flex items-center gap-2">
@@ -57,6 +61,7 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
               variant="ghost"
               size="icon-xs"
               aria-label="Editar tarea"
+              onPointerDown={(event) => event.stopPropagation()}
               onClick={() => onEdit(task)}
             >
               <Pencil />
@@ -66,6 +71,7 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
               variant="ghost"
               size="icon-xs"
               aria-label="Borrar tarea"
+              onPointerDown={(event) => event.stopPropagation()}
               onClick={() => onDelete(task)}
             >
               <Trash2 />
@@ -93,6 +99,7 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         ) : (
           <span>Sin limite</span>
         )}
+      </div>
       </div>
     </article>
   );
