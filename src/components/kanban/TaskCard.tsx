@@ -1,7 +1,8 @@
 "use client";
 
-import { Task } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Task } from "@/types";
+import { Pencil, Trash2 } from "lucide-react";
 
 type TaskCardProps = {
   task: Task;
@@ -20,11 +21,33 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-sm font-semibold text-slate-900">{task.titulo}</h3>
-        <span
-          className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${priorityStyles[task.prioridad]}`}
-        >
-          {task.prioridad}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${priorityStyles[task.prioridad]}`}
+          >
+            {task.prioridad}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Editar tarea"
+              onClick={() => onEdit(task)}
+            >
+              <Pencil />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Borrar tarea"
+              onClick={() => onDelete(task)}
+            >
+              <Trash2 />
+            </Button>
+          </div>
+        </div>
       </div>
       {task.descripcion ? (
         <p className="mt-2 text-sm text-slate-600">{task.descripcion}</p>
@@ -46,24 +69,6 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         ) : (
           <span>Sin limite</span>
         )}
-      </div>
-      <div className="mt-4 flex gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => onEdit(task)}
-        >
-          Editar
-        </Button>
-        <Button
-          type="button"
-          variant="destructive"
-          size="sm"
-          onClick={() => onDelete(task)}
-        >
-          Borrar
-        </Button>
       </div>
     </article>
   );
