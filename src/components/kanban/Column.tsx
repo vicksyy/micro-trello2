@@ -7,9 +7,16 @@ type ColumnProps = {
   title: string;
   status: TaskStatus;
   tasks: Task[];
+  onEditTask: (task: Task) => void;
+  onDeleteTask: (task: Task) => void;
 };
 
-export default function Column({ title, tasks }: ColumnProps) {
+export default function Column({
+  title,
+  tasks,
+  onEditTask,
+  onDeleteTask,
+}: ColumnProps) {
   return (
     <section className="flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50 p-4">
       <header className="flex items-center justify-between">
@@ -27,7 +34,12 @@ export default function Column({ title, tasks }: ColumnProps) {
           </div>
         ) : null}
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard
+            key={task.id}
+            task={task}
+            onEdit={onEditTask}
+            onDelete={onDeleteTask}
+          />
         ))}
       </div>
     </section>

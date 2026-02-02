@@ -1,9 +1,12 @@
 "use client";
 
 import { Task } from "@/types";
+import { Button } from "@/components/ui/button";
 
 type TaskCardProps = {
   task: Task;
+  onEdit: (task: Task) => void;
+  onDelete: (task: Task) => void;
 };
 
 const priorityStyles: Record<Task["prioridad"], string> = {
@@ -12,7 +15,7 @@ const priorityStyles: Record<Task["prioridad"], string> = {
   high: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
-export default function TaskCard({ task }: TaskCardProps) {
+export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -43,6 +46,24 @@ export default function TaskCard({ task }: TaskCardProps) {
         ) : (
           <span>Sin limite</span>
         )}
+      </div>
+      <div className="mt-4 flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onEdit(task)}
+        >
+          Editar
+        </Button>
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          onClick={() => onDelete(task)}
+        >
+          Borrar
+        </Button>
       </div>
     </article>
   );
