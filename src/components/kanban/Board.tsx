@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getInitialState, writeState } from "@/lib/storage";
+import { writeState } from "@/lib/storage";
 import { AuditEvent, BoardState, Task, TaskStatus } from "@/types";
 import {
   DndContext,
@@ -39,8 +39,12 @@ const columnMeta: Array<{ title: string; status: TaskStatus }> = [
   { title: "Done", status: "done" },
 ];
 
-export default function Board() {
-  const [state, setState] = useState<BoardState | null>(null);
+type BoardProps = {
+  state: BoardState;
+  setState: React.Dispatch<React.SetStateAction<BoardState>>;
+};
+
+export default function Board({ state, setState }: BoardProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
@@ -50,10 +54,6 @@ export default function Board() {
     height: number;
   } | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
-
-  useEffect(() => {
-    setState(getInitialState());
-  }, []);
 
   useEffect(() => {
     if (!state) return;
@@ -273,14 +273,6 @@ export default function Board() {
     setActiveTaskId(null);
     setOverlaySize(null);
   };
-
-  if (!state) {
-    return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">
-        Cargando tablero...
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
