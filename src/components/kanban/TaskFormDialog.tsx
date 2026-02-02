@@ -40,7 +40,10 @@ const taskFormSchema = z.object({
   estimacionMin: z.coerce.number().int().min(1, "Minimo 1 minuto"),
   fechaLimite: z.string().optional(),
   estado: z.enum(["todo", "doing", "done"]),
-  rubricaScore: z.coerce.number().min(0).max(10).optional(),
+  rubricaScore: z.preprocess(
+    (value) => (value === "" || value === undefined ? undefined : value),
+    z.coerce.number().min(0).max(10).optional()
+  ),
   rubricaComentario: z.string().optional(),
 });
 
@@ -249,7 +252,16 @@ export default function TaskFormDialog({
                     <FormItem>
                       <FormLabel>Rubrica (0-10)</FormLabel>
                       <FormControl>
-                        <Input type="number" min={0} max={10} {...field} />
+                        <Input
+                          type="number"
+                          min={0}
+                          max={10}
+                          value={field.value ?? ""}
+                          onChange={(event) => {
+                            const next = event.target.value;
+                            field.onChange(next === "" ? undefined : Number(next));
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
