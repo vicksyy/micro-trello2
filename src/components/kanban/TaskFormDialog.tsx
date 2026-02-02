@@ -40,6 +40,8 @@ const taskFormSchema = z.object({
   estimacionMin: z.coerce.number().int().min(1, "Minimo 1 minuto"),
   fechaLimite: z.string().optional(),
   estado: z.enum(["todo", "doing", "done"]),
+  rubricaScore: z.coerce.number().min(0).max(10).optional(),
+  rubricaComentario: z.string().optional(),
 });
 
 export type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -49,6 +51,7 @@ type TaskFormDialogProps = {
   title: string;
   description?: string;
   initialTask?: Task;
+  godModeEnabled: boolean;
   onClose: () => void;
   onSubmit: (values: TaskFormValues) => void;
 };
@@ -61,6 +64,8 @@ const defaultValues: TaskFormValues = {
   estimacionMin: 30,
   fechaLimite: "",
   estado: "todo",
+  rubricaScore: undefined,
+  rubricaComentario: "",
 };
 
 export default function TaskFormDialog({
@@ -68,6 +73,7 @@ export default function TaskFormDialog({
   title,
   description,
   initialTask,
+  godModeEnabled,
   onClose,
   onSubmit,
 }: TaskFormDialogProps) {
@@ -90,6 +96,8 @@ export default function TaskFormDialog({
       estimacionMin: initialTask.estimacionMin,
       fechaLimite: initialTask.fechaLimite ?? "",
       estado: initialTask.estado as TaskStatus,
+      rubricaScore: initialTask.rubricaScore ?? undefined,
+      rubricaComentario: initialTask.rubricaComentario ?? "",
     });
   }, [open, initialTask, form]);
 
@@ -232,6 +240,36 @@ export default function TaskFormDialog({
                 </FormItem>
               )}
             />
+            {godModeEnabled ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="rubricaScore"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rubrica (0-10)</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={0} max={10} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="rubricaComentario"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Comentario de Javi</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Observaciones rapidas" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            ) : null}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={onClose}>
                 Cancelar

@@ -11,6 +11,7 @@ type ColumnProps = {
   tasks: Task[];
   onEditTask: (task: Task) => void;
   onDeleteTask: (task: Task) => void;
+  showGodMode: boolean;
 };
 
 export default function Column({
@@ -19,6 +20,7 @@ export default function Column({
   tasks,
   onEditTask,
   onDeleteTask,
+  showGodMode,
 }: ColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
@@ -55,6 +57,7 @@ export default function Column({
               task={task}
               onEdit={onEditTask}
               onDelete={onDeleteTask}
+              showGodMode={showGodMode}
             />
           ))}
         </div>

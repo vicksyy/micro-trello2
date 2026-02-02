@@ -10,6 +10,7 @@ type TaskCardProps = {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
+  showGodMode: boolean;
 };
 
 const priorityStyles: Record<Task["prioridad"], string> = {
@@ -18,7 +19,12 @@ const priorityStyles: Record<Task["prioridad"], string> = {
   high: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
-export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  onEdit,
+  onDelete,
+  showGodMode,
+}: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -100,6 +106,20 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
           <span>Sin limite</span>
         )}
       </div>
+      {showGodMode ? (
+        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+          <p className="font-semibold text-slate-700">Observaciones de Javi</p>
+          <p className="mt-1">
+            {task.rubricaComentario?.trim() || "Sin comentarios."}
+          </p>
+          <p className="mt-2">
+            Rubrica:{" "}
+            <span className="font-semibold text-slate-800">
+              {task.rubricaScore ?? "—"}
+            </span>
+          </p>
+        </div>
+      ) : null}
       </div>
     </article>
   );

@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { boardStateSchema } from "@/lib/validation";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
 export default function KanbanApp() {
   const [state, setState] = useState<BoardState | null>(null);
@@ -103,6 +104,23 @@ export default function KanbanApp() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2">
+            <div>
+              <p className="text-sm font-medium text-slate-900">Modo Dios</p>
+              <p className="text-xs text-slate-500">
+                Activa rubricado y observaciones.
+              </p>
+            </div>
+            <Switch
+              checked={state.godMode.enabled}
+              onCheckedChange={(checked) =>
+                setState((prev) =>
+                  prev ? { ...prev, godMode: { enabled: checked } } : prev
+                )
+              }
+              aria-label="Activar modo dios"
+            />
+          </div>
           <Button variant="secondary" onClick={handleExport}>
             Exportar JSON
           </Button>
@@ -135,13 +153,51 @@ export default function KanbanApp() {
           </AlertDescription>
         </Alert>
       ) : null}
+      {state.godMode.enabled ? (
+        <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-6 sm:grid-cols-3">
+          <div>
+            <p className="text-sm text-slate-500">Promedio rubricado</p>
+            <p className="text-2xl font-semibold text-slate-900">
+              {state.tasks.filter((task) => typeof task.rubricaScore === "number")
+                .length > 0
+                ? (
+                    state.tasks.reduce((acc, task) => {
+                      return acc + (typeof task.rubricaScore === "number" ? task.rubricaScore : 0);
+                    }, 0) /
+                    state.tasks.filter((task) => typeof task.rubricaScore === "number")
+                      .length
+                  ).toFixed(1)
+                : "—"}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-slate-500">Tareas sin evaluar</p>
+            <p className="text-2xl font-semibold text-slate-900">
+              {
+                state.tasks.filter((task) => typeof task.rubricaScore !== "number")
+                  .length
+              }
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-slate-500">Total tareas</p>
+            <p className="text-2xl font-semibold text-slate-900">
+              {state.tasks.length}
+            </p>
+          </div>
+        </section>
+      ) : null}
       <Tabs defaultValue="board" className="space-y-6">
         <TabsList>
           <TabsTrigger value="board">Tablero</TabsTrigger>
           <TabsTrigger value="audit">Auditoria</TabsTrigger>
         </TabsList>
         <TabsContent value="board">
-          <Board state={state} setState={setState} />
+          <Board
+            state={state}
+            setState={setState}
+            godModeEnabled={state.godMode.enabled}
+          />
         </TabsContent>
         <TabsContent value="audit">
           <AuditLogPanel auditLog={state.auditLog} tasks={state.tasks} />

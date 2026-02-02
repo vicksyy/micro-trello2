@@ -50,9 +50,10 @@ const columnMeta: Array<{ title: string; status: TaskStatus }> = [
 type BoardProps = {
   state: BoardState;
   setState: React.Dispatch<React.SetStateAction<BoardState>>;
+  godModeEnabled: boolean;
 };
 
-export default function Board({ state, setState }: BoardProps) {
+export default function Board({ state, setState, godModeEnabled }: BoardProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
@@ -114,6 +115,9 @@ export default function Board({ state, setState }: BoardProps) {
       fechaLimite: values.fechaLimite || undefined,
       estado: values.estado,
       orden: getNextOrder(values.estado),
+      rubricaScore:
+        values.rubricaScore === undefined ? undefined : values.rubricaScore,
+      rubricaComentario: values.rubricaComentario?.trim() || undefined,
     };
     const auditEvent: AuditEvent = {
       id: uuidv4(),
@@ -151,6 +155,9 @@ export default function Board({ state, setState }: BoardProps) {
       estimacionMin: values.estimacionMin,
       fechaLimite: values.fechaLimite || undefined,
       estado: values.estado,
+      rubricaScore:
+        values.rubricaScore === undefined ? undefined : values.rubricaScore,
+      rubricaComentario: values.rubricaComentario?.trim() || undefined,
     };
     const auditEvent: AuditEvent = {
       id: uuidv4(),
@@ -347,6 +354,7 @@ export default function Board({ state, setState }: BoardProps) {
               tasks={tasksByStatus[column.status]}
               onEditTask={setEditTask}
               onDeleteTask={setDeleteTask}
+              showGodMode={godModeEnabled}
             />
           ))}
         </div>
@@ -366,6 +374,7 @@ export default function Board({ state, setState }: BoardProps) {
         description="Completa la informacion principal."
         onClose={() => setCreateOpen(false)}
         onSubmit={handleCreate}
+        godModeEnabled={godModeEnabled}
       />
       <TaskFormDialog
         open={Boolean(editTask)}
@@ -374,6 +383,7 @@ export default function Board({ state, setState }: BoardProps) {
         initialTask={editTask ?? undefined}
         onClose={() => setEditTask(null)}
         onSubmit={handleEdit}
+        godModeEnabled={godModeEnabled}
       />
       <AlertDialog open={Boolean(deleteTask)}>
         <AlertDialogContent>
