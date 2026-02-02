@@ -117,6 +117,13 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
   };
 
   const renderDiff = (event: AuditEvent) => {
+    if (event.accion === "DELETE") {
+      return (
+        <span className="text-xs text-slate-600">
+          Tarea eliminada.
+        </span>
+      );
+    }
     const before = event.diff.before ?? {};
     const after = event.diff.after ?? {};
     const keys = Array.from(
