@@ -19,7 +19,10 @@ import { getInitialState, writeState } from "@/lib/storage";
 import { AuditEvent, BoardState, Task, TaskStatus } from "@/types";
 import {
   DndContext,
+  DragCancelEvent,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
   PointerSensor,
   closestCenter,
   useSensor,
@@ -28,6 +31,7 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 import { v4 as uuidv4 } from "uuid";
 import { useEffect, useMemo, useState } from "react";
+import TaskCardPreview from "@/components/kanban/TaskCardPreview";
 
 const columnMeta: Array<{ title: string; status: TaskStatus }> = [
   { title: "Todo", status: "todo" },
@@ -40,6 +44,11 @@ export default function Board() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [overlaySize, setOverlaySize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
 
   useEffect(() => {
@@ -184,6 +193,8 @@ export default function Board() {
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveTaskId(null);
+    setOverlaySize(null);
     if (!state) return;
     const { active, over } = event;
     if (!over) return;
@@ -250,6 +261,19 @@ export default function Board() {
     });
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveTaskId(String(event.active.id));
+    const rect = event.active.rect?.current?.initial;
+    if (rect) {
+      setOverlaySize({ width: rect.width, height: rect.height });
+    }
+  };
+
+  const handleDragCancel = (_event: DragCancelEvent) => {
+    setActiveTaskId(null);
+    setOverlaySize(null);
+  };
+
   if (!state) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">
@@ -274,7 +298,9 @@ export default function Board() {
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
         <div className="grid gap-6 lg:grid-cols-3">
           {columnMeta.map((column) => (
@@ -288,6 +314,15 @@ export default function Board() {
             />
           ))}
         </div>
+        <DragOverlay>
+          {activeTaskId && state ? (
+            <TaskCardPreview
+              task={state.tasks.find((task) => task.id === activeTaskId) ?? null}
+              width={overlaySize?.width}
+              height={overlaySize?.height}
+            />
+          ) : null}
+        </DragOverlay>
       </DndContext>
       <TaskFormDialog
         open={createOpen}
