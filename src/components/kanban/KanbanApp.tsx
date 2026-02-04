@@ -127,46 +127,6 @@ export default function KanbanApp() {
           </AlertDescription>
         </Alert>
       ) : null}
-      {state.godMode.enabled ? (
-        <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-3">
-          <div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Promedio rubricado
-            </p>
-            <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-              {state.tasks.filter((task) => typeof task.rubricaScore === "number")
-                .length > 0
-                ? (
-                    state.tasks.reduce((acc, task) => {
-                      return acc + (typeof task.rubricaScore === "number" ? task.rubricaScore : 0);
-                    }, 0) /
-                    state.tasks.filter((task) => typeof task.rubricaScore === "number")
-                      .length
-                  ).toFixed(1)
-                : "—"}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Tareas sin evaluar
-            </p>
-            <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-              {
-                state.tasks.filter((task) => typeof task.rubricaScore !== "number")
-                  .length
-              }
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Total tareas
-            </p>
-            <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-              {state.tasks.length}
-            </p>
-          </div>
-        </section>
-      ) : null}
       <Tabs defaultValue="board" className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <TabsList>
@@ -226,6 +186,46 @@ export default function KanbanApp() {
           </div>
         </div>
         <TabsContent value="board">
+          {state.godMode.enabled ? (
+            <section className="mb-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-3">
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Promedio rubricado
+                </p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                  {state.tasks.filter((task) => typeof task.rubricaScore === "number")
+                    .length > 0
+                    ? (
+                        state.tasks.reduce((acc, task) => {
+                          return acc + (typeof task.rubricaScore === "number" ? task.rubricaScore : 0);
+                        }, 0) /
+                        state.tasks.filter((task) => typeof task.rubricaScore === "number")
+                          .length
+                      ).toFixed(1)
+                    : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Tareas sin evaluar
+                </p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                  {
+                    state.tasks.filter((task) => typeof task.rubricaScore !== "number")
+                      .length
+                  }
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Total tareas
+                </p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                  {state.tasks.length}
+                </p>
+              </div>
+            </section>
+          ) : null}
           <Board
             state={state}
             setState={setState}
