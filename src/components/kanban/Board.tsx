@@ -31,15 +31,10 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 import { v4 as uuidv4 } from "uuid";
 import { useEffect, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import TaskCardPreview from "@/components/kanban/TaskCardPreview";
 import { filterTasks } from "@/lib/query";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
 
 const columnMeta: Array<{ title: string; status: TaskStatus }> = [
   { title: "Todo", status: "todo" },
@@ -51,9 +46,15 @@ type BoardProps = {
   state: BoardState;
   setState: React.Dispatch<React.SetStateAction<BoardState>>;
   godModeEnabled: boolean;
+  godModeEditable?: boolean;
 };
 
-export default function Board({ state, setState, godModeEnabled }: BoardProps) {
+export default function Board({
+  state,
+  setState,
+  godModeEnabled,
+  godModeEditable = false,
+}: BoardProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
@@ -200,6 +201,44 @@ export default function Board({ state, setState, godModeEnabled }: BoardProps) {
     setDeleteTask(null);
   };
 
+  const handleSaveNotes = (
+    taskId: string,
+    nota: number | undefined,
+    observaciones: string
+  ) => {
+    const task = state.tasks.find((item) => item.id === taskId);
+    if (!task) return;
+    const updatedTask: Task = {
+      ...task,
+      rubricaScore: typeof nota === "number" ? nota : undefined,
+      rubricaComentario: observaciones ? observaciones : undefined,
+    };
+    const auditEvent: AuditEvent = {
+      id: uuidv4(),
+      timestamp: new Date().toISOString(),
+      accion: "UPDATE",
+      taskId,
+      diff: {
+        before: {
+          rubricaScore: task.rubricaScore,
+          rubricaComentario: task.rubricaComentario,
+        },
+        after: {
+          rubricaScore: updatedTask.rubricaScore,
+          rubricaComentario: updatedTask.rubricaComentario,
+        },
+      },
+      userLabel: "Alumno/a",
+    };
+    setState({
+      ...state,
+      tasks: state.tasks.map((item) =>
+        item.id === taskId ? updatedTask : item
+      ),
+      auditLog: [auditEvent, ...state.auditLog],
+    });
+  };
+
   const applyOrder = (tasks: Task[], orderedIds: string[]) => {
     const orderMap = new Map(
       orderedIds.map((id, index) => [id, index + 1])
@@ -295,10 +334,10 @@ export default function Board({ state, setState, godModeEnabled }: BoardProps) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Tablero operativo
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Crea, edita y organiza tareas por columna.
           </p>
         </div>
@@ -311,31 +350,14 @@ export default function Board({ state, setState, godModeEnabled }: BoardProps) {
               onChange={(event) => setQuery(event.target.value)}
               aria-label="Buscar tareas"
             />
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Ayuda
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72">
-                <div className="space-y-3 text-sm">
-                  <p className="font-medium text-slate-900">Ejemplos:</p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">tag:macro</Badge>
-                    <Badge variant="secondary">p:high</Badge>
-                    <Badge variant="secondary">due:overdue</Badge>
-                    <Badge variant="secondary">due:week</Badge>
-                    <Badge variant="secondary">est:&lt;60</Badge>
-                    <Badge variant="secondary">est:&gt;=120</Badge>
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    Texto libre busca en titulo y descripcion.
-                  </p>
-                </div>
-              </PopoverContent>
-            </Popover>
           </div>
-          <Button onClick={() => setCreateOpen(true)}>Nueva tarea</Button>
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="dark:bg-amber-100 dark:text-slate-900 dark:hover:bg-amber-50"
+          >
+            <Plus />
+            Nueva tarea
+          </Button>
         </div>
       </div>
       <DndContext
@@ -355,6 +377,8 @@ export default function Board({ state, setState, godModeEnabled }: BoardProps) {
               onEditTask={setEditTask}
               onDeleteTask={setDeleteTask}
               showGodMode={godModeEnabled}
+              godModeEditable={godModeEditable}
+              onSaveNotes={handleSaveNotes}
             />
           ))}
         </div>

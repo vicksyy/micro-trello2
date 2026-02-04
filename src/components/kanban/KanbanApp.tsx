@@ -13,14 +13,35 @@ import { boardStateSchema } from "@/lib/validation";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { Moon, Sun } from "lucide-react";
 
 export default function KanbanApp() {
   const [state, setState] = useState<BoardState | null>(null);
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     setState(getInitialState());
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("micro-kanban-theme");
+    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")
+      .matches;
+    const enabled = stored ? stored === "dark" : Boolean(prefersDark);
+    setDarkMode(enabled);
+    document.documentElement.classList.toggle("dark", enabled);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    document.documentElement.classList.toggle("dark", darkMode);
+    window.localStorage.setItem(
+      "micro-kanban-theme",
+      darkMode ? "dark" : "light"
+    );
+  }, [darkMode]);
 
   const handleExport = () => {
     if (!state) return;
@@ -93,54 +114,7 @@ export default function KanbanApp() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900">
-            Operaciones del tablero
-          </h2>
-          <p className="text-sm text-slate-500">
-            Exporta o importa el estado completo del tablero.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2">
-            <div>
-              <p className="text-sm font-medium text-slate-900">Modo Dios</p>
-              <p className="text-xs text-slate-500">
-                Activa rubricado y observaciones.
-              </p>
-            </div>
-            <Switch
-              checked={state.godMode.enabled}
-              onCheckedChange={(checked) =>
-                setState((prev) =>
-                  prev ? { ...prev, godMode: { enabled: checked } } : prev
-                )
-              }
-              aria-label="Activar modo dios"
-            />
-          </div>
-          <Button variant="secondary" onClick={handleExport}>
-            Exportar JSON
-          </Button>
-          <label className="inline-flex items-center gap-2">
-            <Input
-              type="file"
-              accept="application/json"
-              className="hidden"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) handleImport(file);
-                event.currentTarget.value = "";
-              }}
-            />
-            <Button asChild>
-              <span>Importar JSON</span>
-            </Button>
-          </label>
-        </div>
-      </div>
+    <div className="space-y-5">
       {importErrors.length > 0 ? (
         <Alert variant="destructive">
           <AlertTitle>Errores de importacion</AlertTitle>
@@ -154,10 +128,12 @@ export default function KanbanApp() {
         </Alert>
       ) : null}
       {state.godMode.enabled ? (
-        <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-6 sm:grid-cols-3">
+        <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-3">
           <div>
-            <p className="text-sm text-slate-500">Promedio rubricado</p>
-            <p className="text-2xl font-semibold text-slate-900">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Promedio rubricado
+            </p>
+            <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
               {state.tasks.filter((task) => typeof task.rubricaScore === "number")
                 .length > 0
                 ? (
@@ -171,8 +147,10 @@ export default function KanbanApp() {
             </p>
           </div>
           <div>
-            <p className="text-sm text-slate-500">Tareas sin evaluar</p>
-            <p className="text-2xl font-semibold text-slate-900">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Tareas sin evaluar
+            </p>
+            <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
               {
                 state.tasks.filter((task) => typeof task.rubricaScore !== "number")
                   .length
@@ -180,18 +158,73 @@ export default function KanbanApp() {
             </p>
           </div>
           <div>
-            <p className="text-sm text-slate-500">Total tareas</p>
-            <p className="text-2xl font-semibold text-slate-900">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Total tareas
+            </p>
+            <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
               {state.tasks.length}
             </p>
           </div>
         </section>
       ) : null}
       <Tabs defaultValue="board" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="board">Tablero</TabsTrigger>
-          <TabsTrigger value="audit">Auditoria</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <TabsList>
+            <TabsTrigger value="board">Tablero</TabsTrigger>
+            <TabsTrigger value="audit">Auditoria</TabsTrigger>
+          </TabsList>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              onClick={() => setDarkMode((prev) => !prev)}
+              className="dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+              aria-label={darkMode ? "Activar modo claro" : "Activar modo oscuro"}
+            >
+              {darkMode ? <Sun /> : <Moon />}
+            </Button>
+            <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 dark:border-slate-700 dark:bg-slate-900">
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                Modo Dios
+              </p>
+              <Switch
+                checked={state.godMode.enabled}
+                onCheckedChange={(checked) =>
+                  setState((prev) =>
+                    prev ? { ...prev, godMode: { enabled: checked } } : prev
+                  )
+                }
+                aria-label="Activar modo dios"
+              />
+            </div>
+            <Button
+              variant="secondary"
+              onClick={handleExport}
+              className="dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            >
+              Exportar JSON
+            </Button>
+            <label className="inline-flex items-center gap-2">
+              <Input
+                type="file"
+                accept="application/json"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) handleImport(file);
+                  event.currentTarget.value = "";
+                }}
+              />
+              <Button
+                asChild
+                className="dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+              >
+                <span>Importar JSON</span>
+              </Button>
+            </label>
+          </div>
+        </div>
         <TabsContent value="board">
           <Board
             state={state}

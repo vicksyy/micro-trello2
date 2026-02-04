@@ -1,125 +1,62 @@
 import { Task } from "@/types";
 
-export type QueryFilters = {
-  text: string;
-  tags: string[];
-  priority?: Task["prioridad"];
-  due?: "overdue" | "week";
-  est?: {
-    op: "<" | "<=" | ">" | ">=" | "=";
-    value: number;
-  };
-};
+const PRIORITIES: Task["prioridad"][] = ["low", "medium", "high"];
 
-const OP_RE = /^(<=|>=|=|<|>)(\d+)$/;
+const normalizeText = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 
-export const parseQuery = (input: string): QueryFilters => {
-  const tokens = input.trim().split(/\s+/).filter(Boolean);
-  const filters: QueryFilters = {
-    text: "",
-    tags: [],
-  };
+const parseSimpleQuery = (input: string) => {
+  const normalized = normalizeText(input);
+  if (!normalized) {
+    return {
+      priorities: [] as Task["prioridad"][],
+      minEst: undefined as number | undefined,
+      terms: [] as string[],
+    };
+  }
 
-  const textParts: string[] = [];
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const priorities: Task["prioridad"][] = [];
+  const numbers: number[] = [];
+  const terms: string[] = [];
 
   tokens.forEach((token) => {
-    if (token.startsWith("tag:")) {
-      const tag = token.slice(4).trim().toLowerCase();
-      if (tag) filters.tags.push(tag);
+    if (PRIORITIES.includes(token as Task["prioridad"])) {
+      priorities.push(token as Task["prioridad"]);
       return;
     }
-    if (token.startsWith("p:")) {
-      const value = token.slice(2).trim().toLowerCase();
-      if (value === "low" || value === "medium" || value === "high") {
-        filters.priority = value;
-      }
+    if (/^\d+$/.test(token)) {
+      numbers.push(Number(token));
       return;
     }
-    if (token.startsWith("due:")) {
-      const value = token.slice(4).trim().toLowerCase();
-      if (value === "overdue" || value === "week") {
-        filters.due = value;
-      }
-      return;
-    }
-    if (token.startsWith("est:")) {
-      const value = token.slice(4).trim();
-      const match = OP_RE.exec(value);
-      if (match) {
-        filters.est = {
-          op: match[1] as QueryFilters["est"]["op"],
-          value: Number(match[2]),
-        };
-      }
-      return;
-    }
-    textParts.push(token);
+    terms.push(token);
   });
 
-  filters.text = textParts.join(" ").trim().toLowerCase();
-  return filters;
-};
-
-const isDueThisWeek = (dateString: string) => {
-  const today = new Date();
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return false;
-  const start = new Date(today);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 7);
-  return date >= start && date <= end;
-};
-
-const isOverdue = (dateString: string) => {
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return false;
-  return date < new Date();
-};
-
-const matchesEst = (est: QueryFilters["est"], value: number) => {
-  if (!est) return true;
-  const target = est.value;
-  switch (est.op) {
-    case "<":
-      return value < target;
-    case "<=":
-      return value <= target;
-    case ">":
-      return value > target;
-    case ">=":
-      return value >= target;
-    case "=":
-      return value === target;
-    default:
-      return true;
-  }
+  return {
+    priorities,
+    minEst: numbers.length > 0 ? Math.max(...numbers) : undefined,
+    terms,
+  };
 };
 
 export const filterTasks = (tasks: Task[], query: string) => {
-  const filters = parseQuery(query);
+  const filters = parseSimpleQuery(query);
   return tasks.filter((task) => {
-    if (filters.priority && task.prioridad !== filters.priority) return false;
-    if (filters.tags.length > 0) {
-      const taskTags = task.tags.map((tag) => tag.toLowerCase());
-      const hasAll = filters.tags.every((tag) => taskTags.includes(tag));
+    if (filters.priorities.length > 0) {
+      if (!filters.priorities.includes(task.prioridad)) return false;
+    }
+    if (typeof filters.minEst === "number") {
+      if (task.estimacionMin < filters.minEst) return false;
+    }
+    if (filters.terms.length > 0) {
+      const haystack = normalizeText(
+        `${task.titulo} ${task.descripcion ?? ""}`
+      );
+      const hasAll = filters.terms.every((term) => haystack.includes(term));
       if (!hasAll) return false;
-    }
-    if (filters.due) {
-      if (!task.fechaLimite) return false;
-      if (filters.due === "overdue" && !isOverdue(task.fechaLimite)) {
-        return false;
-      }
-      if (filters.due === "week" && !isDueThisWeek(task.fechaLimite)) {
-        return false;
-      }
-    }
-    if (filters.est && !matchesEst(filters.est, task.estimacionMin)) {
-      return false;
-    }
-    if (filters.text) {
-      const haystack = `${task.titulo} ${task.descripcion ?? ""}`.toLowerCase();
-      if (!haystack.includes(filters.text)) return false;
     }
     return true;
   });

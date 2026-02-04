@@ -120,17 +120,27 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
 
   const renderDiff = (event: AuditEvent) => {
     if (event.accion === "DELETE") {
-      return <span className="text-xs text-slate-600">Tarea eliminada.</span>;
+      return (
+        <span className="text-xs text-slate-600 dark:text-slate-300">
+          Tarea eliminada.
+        </span>
+      );
     }
     if (event.accion === "CREATE") {
-      return <span className="text-xs text-slate-600">Tarea creada.</span>;
+      return (
+        <span className="text-xs text-slate-600 dark:text-slate-300">
+          Tarea creada.
+        </span>
+      );
     }
     const before = event.diff.before ?? {};
     const after = event.diff.after ?? {};
     const keys = Array.from(
       new Set([...Object.keys(before), ...Object.keys(after)])
     );
-    if (keys.length === 0) return <span className="text-xs">—</span>;
+    if (keys.length === 0) {
+      return <span className="text-xs dark:text-slate-300">—</span>;
+    }
     return (
       <div className="space-y-2">
         {keys.map((key) => (
@@ -138,12 +148,14 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
             key={key}
             className="grid grid-cols-[60px_1fr_auto_1fr] items-center gap-1 text-xs"
           >
-            <span className="truncate font-medium text-slate-600">{key}</span>
-            <span className="rounded-md bg-slate-50 px-2 py-1 text-slate-600">
+            <span className="truncate font-medium text-slate-600 dark:text-slate-300">
+              {key}
+            </span>
+            <span className="rounded-md bg-slate-50 px-2 py-1 text-slate-600 dark:bg-slate-800 dark:text-slate-200">
               {renderValue((before as Record<string, unknown>)[key])}
             </span>
-            <ArrowRight className="h-4 w-4 text-slate-400" />
-            <span className="rounded-md bg-emerald-50 px-2 py-1 text-emerald-700">
+            <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <span className="rounded-md bg-emerald-50 px-2 py-1 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200">
               {renderValue((after as Record<string, unknown>)[key])}
             </span>
           </div>
@@ -153,17 +165,21 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
   };
 
   return (
-    <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
+    <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-slate-900">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Log de auditoria
           </h3>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Filtra por accion o por taskId para revisar cambios.
           </p>
         </div>
-        <Button variant="secondary" onClick={handleCopy}>
+        <Button
+          variant="secondary"
+          onClick={handleCopy}
+          className="dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+        >
           Copiar resumen
         </Button>
       </header>
@@ -186,7 +202,7 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
           </Select>
         </div>
         <Input
-          className="max-w-xs"
+          className="max-w-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           placeholder="Filtrar por taskId o titulo"
           value={taskFilter}
           onChange={(event) => setTaskFilter(event.target.value)}
@@ -194,6 +210,7 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
         {(actionFilter !== "ALL" || taskFilter) && (
           <Button
             variant="ghost"
+            className="dark:text-slate-200 dark:hover:bg-slate-800"
             onClick={() => {
               setActionFilter("ALL");
               setTaskFilter("");
@@ -203,15 +220,15 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
           </Button>
         )}
       </div>
-      <div className="rounded-xl border border-slate-200">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Timestamp</TableHead>
-              <TableHead>Accion</TableHead>
-              <TableHead>TaskId</TableHead>
-              <TableHead>Tarea</TableHead>
-              <TableHead>Diff</TableHead>
+              <TableHead className="dark:text-slate-200">Timestamp</TableHead>
+              <TableHead className="dark:text-slate-200">Accion</TableHead>
+              <TableHead className="dark:text-slate-200">TaskId</TableHead>
+              <TableHead className="dark:text-slate-200">Tarea</TableHead>
+              <TableHead className="dark:text-slate-200">Diff</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -224,7 +241,7 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
             ) : (
               filteredLog.map((event) => (
                 <TableRow key={event.id}>
-                  <TableCell className="text-xs text-slate-600">
+                  <TableCell className="text-xs text-slate-600 dark:text-slate-300">
                     {new Date(event.timestamp).toLocaleString()}
                   </TableCell>
                   <TableCell>
@@ -232,13 +249,13 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
                       {actionLabels[event.accion]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-xs text-slate-600">
+                  <TableCell className="text-xs text-slate-600 dark:text-slate-300">
                     {shortId(event.taskId)}
                   </TableCell>
-                  <TableCell className="text-xs text-slate-600">
+                  <TableCell className="text-xs text-slate-600 dark:text-slate-300">
                     {getTitleFromEvent(event) || "—"}
                   </TableCell>
-                  <TableCell className="text-xs text-slate-600">
+                  <TableCell className="text-xs text-slate-600 dark:text-slate-300">
                     {renderDiff(event)}
                   </TableCell>
                 </TableRow>

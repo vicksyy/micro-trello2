@@ -250,7 +250,7 @@ export default function TaskFormDialog({
                   name="rubricaScore"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Rubrica (0-10)</FormLabel>
+                      <FormLabel>Nota (0-10)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -272,7 +272,7 @@ export default function TaskFormDialog({
                   name="rubricaComentario"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Comentario de Javi</FormLabel>
+                      <FormLabel>Observaciones</FormLabel>
                       <FormControl>
                         <Input placeholder="Observaciones rapidas" {...field} />
                       </FormControl>
@@ -286,7 +286,12 @@ export default function TaskFormDialog({
               <Button type="button" variant="ghost" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit">Guardar</Button>
+              <Button
+                type="submit"
+                className="dark:bg-amber-100 dark:text-slate-900 dark:hover:bg-amber-50"
+              >
+                Guardar
+              </Button>
             </div>
           </form>
         </Form>
