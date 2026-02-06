@@ -4,6 +4,7 @@ import TaskCard from "@/components/kanban/TaskCard";
 import { Task, TaskStatus } from "@/types";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CheckCircle2, ClipboardList, Loader2 } from "lucide-react";
 
 type ColumnProps = {
   title: string;
@@ -34,6 +35,9 @@ export default function Column({
     id: status,
   });
 
+  const HeaderIcon =
+    status === "todo" ? ClipboardList : status === "doing" ? Loader2 : CheckCircle2;
+
   return (
     <section
       ref={setNodeRef}
@@ -43,11 +47,28 @@ export default function Column({
           : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900"
       }`}
     >
-      <header className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-100">
+      <header
+        className={`-mx-4 flex items-center justify-between border-b-2 px-4 pb-3 ${
+          status === "todo"
+            ? "border-amber-400"
+            : status === "doing"
+            ? "border-sky-400"
+            : "border-emerald-400"
+        }`}
+      >
+        <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-100">
+          <HeaderIcon className="h-4 w-4 text-slate-500 dark:text-slate-300" />
           {title}
         </h2>
-        <span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-200">
+        <span
+          className={`rounded-full border border-slate-300 px-2 py-0.5 text-xs font-medium text-slate-800 dark:border-slate-700 dark:text-slate-900 ${
+            status === "todo"
+              ? "bg-amber-100"
+              : status === "doing"
+              ? "bg-sky-100"
+              : "bg-emerald-100"
+          }`}
+        >
           {tasks.length}
         </span>
       </header>

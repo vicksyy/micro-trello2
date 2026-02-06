@@ -288,7 +288,7 @@ export default function TaskFormDialog({
               </Button>
               <Button
                 type="submit"
-                className="dark:bg-amber-100 dark:text-slate-900 dark:hover:bg-amber-50"
+                className="bg-[#0f1f3d] text-white hover:bg-[#0c1931] dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
               >
                 Guardar
               </Button>

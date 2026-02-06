@@ -332,33 +332,21 @@ export default function Board({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Tablero operativo
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Crea, edita y organiza tareas por columna.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Input
-              className="w-64"
-              placeholder="Buscar y filtrar..."
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              aria-label="Buscar tareas"
-            />
-          </div>
-          <Button
-            onClick={() => setCreateOpen(true)}
-            className="dark:bg-amber-100 dark:text-slate-900 dark:hover:bg-amber-50"
-          >
-            <Plus />
-            Nueva tarea
-          </Button>
-        </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          className="w-64"
+          placeholder="Buscar y filtrar..."
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          aria-label="Buscar tareas"
+        />
+        <Button
+          onClick={() => setCreateOpen(true)}
+          className="bg-[#0f1f3d] text-white hover:bg-[#0c1931] dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+        >
+          <Plus />
+          Nueva tarea
+        </Button>
       </div>
       <DndContext
         sensors={sensors}
@@ -388,6 +376,7 @@ export default function Board({
               task={state.tasks.find((task) => task.id === activeTaskId) ?? null}
               width={overlaySize?.width}
               height={overlaySize?.height}
+              showGodMode={godModeEnabled}
             />
           ) : null}
         </DragOverlay>

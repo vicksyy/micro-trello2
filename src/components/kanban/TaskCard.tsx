@@ -119,6 +119,7 @@ export default function TaskCard({
           </div>
         </div>
       </div>
+      <div className="-mx-4 mt-3 border-t border-slate-200 dark:border-slate-800" />
       {task.descripcion ? (
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {task.descripcion}
@@ -214,7 +215,7 @@ export default function TaskCard({
             </p>
             <Button
               size="sm"
-              className="dark:bg-amber-100 dark:text-slate-900 dark:hover:bg-amber-50"
+              className="bg-[#0f1f3d] text-white hover:bg-[#0c1931] dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
               onClick={() =>
                 onSaveNotes?.(
                   task.id,

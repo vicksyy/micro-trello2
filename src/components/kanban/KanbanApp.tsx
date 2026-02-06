@@ -12,36 +12,51 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { boardStateSchema } from "@/lib/validation";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import { Switch } from "@/components/ui/switch";
-import { Moon, Sun } from "lucide-react";
+import { FileDown, FileUp, Wand2 } from "lucide-react";
+
+type IconButtonWithTooltipProps = {
+  label: string;
+  onClick?: () => void;
+  pressed?: boolean;
+  children: React.ReactNode;
+  className?: string;
+};
+
+function IconButtonWithTooltip({
+  label,
+  onClick,
+  pressed,
+  children,
+  className,
+}: IconButtonWithTooltipProps) {
+  return (
+    <div className="relative group">
+      <Button
+        type="button"
+        variant="secondary"
+        size="icon"
+        aria-label={label}
+        title={label}
+        aria-pressed={pressed}
+        onClick={onClick}
+        className={className}
+      >
+        {children}
+      </Button>
+      <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-[#0f1f3d] bg-[#0f1f3d] px-2 py-1 text-xs text-white opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
+        {label}
+      </span>
+      <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border border-[#0f1f3d] bg-[#0f1f3d] opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:border-slate-700 dark:bg-slate-100" />
+    </div>
+  );
+}
 
 export default function KanbanApp() {
   const [state, setState] = useState<BoardState | null>(null);
   const [importErrors, setImportErrors] = useState<string[]>([]);
-  const [darkMode, setDarkMode] = useState(false);
-
   useEffect(() => {
     setState(getInitialState());
   }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem("micro-kanban-theme");
-    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")
-      .matches;
-    const enabled = stored ? stored === "dark" : Boolean(prefersDark);
-    setDarkMode(enabled);
-    document.documentElement.classList.toggle("dark", enabled);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    document.documentElement.classList.toggle("dark", darkMode);
-    window.localStorage.setItem(
-      "micro-kanban-theme",
-      darkMode ? "dark" : "light"
-    );
-  }, [darkMode]);
 
   const handleExport = () => {
     if (!state) return;
@@ -134,38 +149,30 @@ export default function KanbanApp() {
             <TabsTrigger value="audit">Auditoria</TabsTrigger>
           </TabsList>
           <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              onClick={() => setDarkMode((prev) => !prev)}
-              className="dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-              aria-label={darkMode ? "Activar modo claro" : "Activar modo oscuro"}
+            <IconButtonWithTooltip
+              label="Modo Dios"
+              pressed={state.godMode.enabled}
+              onClick={() =>
+                setState((prev) =>
+                  prev ? { ...prev, godMode: { enabled: !prev.godMode.enabled } } : prev
+                )
+              }
+              className={`border border-slate-200 dark:border-slate-700 ${
+                state.godMode.enabled
+                  ? "bg-white text-slate-900 hover:bg-slate-100 dark:bg-slate-100 dark:text-slate-900"
+                  : "dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+              }`}
             >
-              {darkMode ? <Sun /> : <Moon />}
-            </Button>
-            <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 dark:border-slate-700 dark:bg-slate-900">
-              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                Modo Dios
-              </p>
-              <Switch
-                checked={state.godMode.enabled}
-                onCheckedChange={(checked) =>
-                  setState((prev) =>
-                    prev ? { ...prev, godMode: { enabled: checked } } : prev
-                  )
-                }
-                aria-label="Activar modo dios"
-              />
-            </div>
-            <Button
-              variant="secondary"
+              <Wand2 />
+            </IconButtonWithTooltip>
+            <IconButtonWithTooltip
+              label="Exportar JSON"
               onClick={handleExport}
-              className="dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+              className="border border-slate-200 bg-white/60 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              Exportar JSON
-            </Button>
-            <label className="inline-flex items-center gap-2">
+              <FileDown />
+            </IconButtonWithTooltip>
+            <label className="relative group inline-flex items-center">
               <Input
                 type="file"
                 accept="application/json"
@@ -178,10 +185,20 @@ export default function KanbanApp() {
               />
               <Button
                 asChild
-                className="dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                variant="ghost"
+                size="icon"
+                className="border border-slate-200 bg-white/60 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-800"
+                aria-label="Importar JSON"
+                title="Importar JSON"
               >
-                <span>Importar JSON</span>
+                <span>
+                  <FileUp />
+                </span>
               </Button>
+              <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-[#0f1f3d] bg-[#0f1f3d] px-2 py-1 text-xs text-white opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
+                Importar JSON
+              </span>
+              <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border border-[#0f1f3d] bg-[#0f1f3d] opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:border-slate-700 dark:bg-slate-100" />
             </label>
           </div>
         </div>
