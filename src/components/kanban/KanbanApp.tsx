@@ -13,7 +13,7 @@ import { boardStateSchema } from "@/lib/validation";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { FileDown, FileUp, Wand2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 
 type IconButtonWithTooltipProps = {
   label: string;
@@ -21,6 +21,7 @@ type IconButtonWithTooltipProps = {
   pressed?: boolean;
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 };
 
 function IconButtonWithTooltip({
@@ -29,6 +30,7 @@ function IconButtonWithTooltip({
   pressed,
   children,
   className,
+  style,
 }: IconButtonWithTooltipProps) {
   return (
     <div className="relative group">
@@ -40,6 +42,7 @@ function IconButtonWithTooltip({
         aria-pressed={pressed}
         onClick={onClick}
         className={className}
+        style={style}
       >
         {children}
       </Button>
@@ -87,33 +90,67 @@ export default function KanbanApp() {
       }
 
       const incoming = result.data;
-      const seen = new Set<string>();
-      const auditEntries: BoardState["auditLog"] = [];
-      const updatedTasks = incoming.tasks.map((task) => {
-        if (!seen.has(task.id)) {
-          seen.add(task.id);
-          return task;
-        }
-        const newId = uuidv4();
-        seen.add(newId);
-        auditEntries.push({
-          id: uuidv4(),
-          timestamp: new Date().toISOString(),
-          accion: "UPDATE" as const,
-          taskId: task.id,
-          diff: {
-            before: { id: task.id },
-            after: { id: newId },
-          },
-          userLabel: "Alumno/a" as const,
-        });
-        return { ...task, id: newId };
-      });
+      const tasksAreEqual = (a: BoardState["tasks"][number], b: BoardState["tasks"][number]) =>
+        JSON.stringify(a) === JSON.stringify(b);
 
-      setState({
-        ...incoming,
-        tasks: updatedTasks,
-        auditLog: [...auditEntries, ...incoming.auditLog],
+      setState((prev) => {
+        const current = prev ?? incoming;
+        const mergedTasks = new Map<string, BoardState["tasks"][number]>();
+        const auditEntries: BoardState["auditLog"] = [];
+        current.tasks.forEach((task) => {
+          mergedTasks.set(task.id, task);
+        });
+        incoming.tasks.forEach((task) => {
+          const existing = mergedTasks.get(task.id);
+          if (!existing) {
+            mergedTasks.set(task.id, task);
+            auditEntries.push({
+              id: uuidv4(),
+              timestamp: new Date().toISOString(),
+              accion: "CREATE" as const,
+              taskId: task.id,
+              diff: {
+                after: task,
+              },
+              userLabel: "Alumno/a" as const,
+            });
+            return;
+          }
+          if (!tasksAreEqual(existing, task)) {
+            mergedTasks.set(task.id, task);
+            auditEntries.push({
+              id: uuidv4(),
+              timestamp: new Date().toISOString(),
+              accion: "UPDATE" as const,
+              taskId: task.id,
+              diff: {
+                before: existing,
+                after: task,
+              },
+              userLabel: "Alumno/a" as const,
+            });
+          }
+        });
+
+        const mergedAudit = new Map<string, BoardState["auditLog"][number]>();
+        current.auditLog.forEach((event) => {
+          mergedAudit.set(event.id, event);
+        });
+        incoming.auditLog.forEach((event) => {
+          if (!mergedAudit.has(event.id)) {
+            mergedAudit.set(event.id, event);
+          }
+        });
+        auditEntries.forEach((event) => {
+          mergedAudit.set(event.id, event);
+        });
+
+        return {
+          ...current,
+          tasks: Array.from(mergedTasks.values()),
+          auditLog: Array.from(mergedAudit.values()),
+          godMode: prev?.godMode ?? incoming.godMode,
+        };
       });
       toast.success("Importación completada");
     } catch (error) {
@@ -234,51 +271,71 @@ export default function KanbanApp() {
           </div>
         </div>
         <TabsContent value="board">
-          {state.godMode.enabled ? (
-            <section className="mb-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-3">
-              <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Promedio rubricado
-                </p>
-                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                  {state.tasks.filter((task) => typeof task.rubricaScore === "number")
-                    .length > 0
-                    ? (
-                        state.tasks.reduce((acc, task) => {
-                          return acc + (typeof task.rubricaScore === "number" ? task.rubricaScore : 0);
-                        }, 0) /
-                        state.tasks.filter((task) => typeof task.rubricaScore === "number")
+          <LayoutGroup>
+            <AnimatePresence mode="popLayout" initial={false}>
+              {state.godMode.enabled ? (
+                <motion.section
+                  className="mb-6 grid gap-4 p-6 sm:grid-cols-3"
+                  layout
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    transition: { duration: 0.35, ease: "easeOut", delay: 0.1 },
+                  }}
+                  exit={{
+                    opacity: 0,
+                    y: -8,
+                    transition: { duration: 0.18, ease: "easeIn" },
+                  }}
+                >
+                  <div className="text-center">
+                    <p className="text-base font-medium text-slate-500 dark:text-slate-400">
+                      Promedio rubricado
+                    </p>
+                    <p className="text-3xl font-semibold text-slate-900 dark:text-slate-100">
+                      {state.tasks.filter((task) => typeof task.rubricaScore === "number")
+                        .length > 0
+                        ? (
+                            state.tasks.reduce((acc, task) => {
+                              return acc + (typeof task.rubricaScore === "number" ? task.rubricaScore : 0);
+                            }, 0) /
+                            state.tasks.filter((task) => typeof task.rubricaScore === "number")
+                              .length
+                          ).toFixed(1)
+                        : "—"}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-base font-medium text-slate-500 dark:text-slate-400">
+                      Tareas sin evaluar
+                    </p>
+                    <p className="text-3xl font-semibold text-rose-600 dark:text-rose-400">
+                      {
+                        state.tasks.filter((task) => typeof task.rubricaScore !== "number")
                           .length
-                      ).toFixed(1)
-                    : "—"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Tareas sin evaluar
-                </p>
-                <p className="text-2xl font-semibold text-rose-600 dark:text-rose-400">
-                  {
-                    state.tasks.filter((task) => typeof task.rubricaScore !== "number")
-                      .length
-                  }
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Total tareas
-                </p>
-                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                  {state.tasks.length}
-                </p>
-              </div>
-            </section>
-          ) : null}
-          <Board
-            state={state}
-            setState={setState}
-            godModeEnabled={state.godMode.enabled}
-          />
+                      }
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-base font-medium text-slate-500 dark:text-slate-400">
+                      Total tareas
+                    </p>
+                    <p className="text-3xl font-semibold text-slate-900 dark:text-slate-100">
+                      {state.tasks.length}
+                    </p>
+                  </div>
+                </motion.section>
+              ) : null}
+            </AnimatePresence>
+            <motion.div layout>
+              <Board
+                state={state}
+                setState={setState}
+                godModeEnabled={state.godMode.enabled}
+              />
+            </motion.div>
+          </LayoutGroup>
         </TabsContent>
         <TabsContent value="audit">
           <AuditLogPanel auditLog={state.auditLog} tasks={state.tasks} />

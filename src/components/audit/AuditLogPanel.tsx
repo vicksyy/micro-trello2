@@ -3,13 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -17,9 +10,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { AuditAction, AuditEvent } from "@/types";
-import { ArrowRight, Copy } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Copy, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
@@ -29,6 +27,8 @@ type AuditLogPanelProps = {
 };
 
 type ActionFilter = "ALL" | AuditAction;
+type DiffFilter = "ALL" | "WITH_CHANGES" | "NO_CHANGES";
+type SortOrder = "newest" | "oldest";
 
 const actionLabels: Record<AuditAction, string> = {
   CREATE: "Create",
@@ -61,6 +61,11 @@ const actionClass: Record<AuditAction, string> = {
 export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
   const [actionFilter, setActionFilter] = useState<ActionFilter>("ALL");
   const [taskFilter, setTaskFilter] = useState("");
+  const [diffFilter, setDiffFilter] = useState<DiffFilter>("ALL");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+  const [openFilter, setOpenFilter] = useState<
+    "timestamp" | "action" | "diff" | null
+  >(null);
 
   const titleById = useMemo(() => {
     return new Map(tasks.map((task) => [task.id, task.titulo]));
@@ -76,16 +81,50 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
     return afterTitle || beforeTitle || titleById.get(event.taskId) || "";
   };
 
+  const getDiffKeys = (event: AuditEvent) => {
+    if (event.accion === "DELETE" || event.accion === "CREATE") {
+      return ["__event__"];
+    }
+    const before = event.diff.before ?? {};
+    const after = event.diff.after ?? {};
+    return Array.from(new Set([...Object.keys(before), ...Object.keys(after)])).filter(
+      (key) => {
+        const beforeValue = (before as Record<string, unknown>)[key];
+        const afterValue = (after as Record<string, unknown>)[key];
+        return JSON.stringify(beforeValue) !== JSON.stringify(afterValue);
+      }
+    );
+  };
+
+  const hasDiffChanges = (event: AuditEvent) => getDiffKeys(event).length > 0;
+
   const filteredLog = useMemo(() => {
-    return auditLog.filter((event) => {
+    const filtered = auditLog.filter((event) => {
       const matchAction =
         actionFilter === "ALL" ? true : event.accion === actionFilter;
       const title = getTitleFromEvent(event);
       const haystack = `${event.taskId} ${shortId(event.taskId)} ${title}`.toLowerCase();
       const matchTask = taskFilter ? haystack.includes(taskFilter.toLowerCase()) : true;
-      return matchAction && matchTask;
+      const matchDiff =
+        diffFilter === "ALL"
+          ? true
+          : diffFilter === "WITH_CHANGES"
+            ? hasDiffChanges(event)
+            : !hasDiffChanges(event);
+      return matchAction && matchTask && matchDiff;
     });
-  }, [auditLog, actionFilter, taskFilter]);
+    return [...filtered].sort((a, b) => {
+      const diff =
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+      return sortOrder === "oldest" ? diff : -diff;
+    });
+  }, [
+    auditLog,
+    actionFilter,
+    taskFilter,
+    diffFilter,
+    sortOrder,
+  ]);
 
 
   const summaryText = useMemo(() => {
@@ -134,29 +173,63 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
   };
 
   const renderDiff = (event: AuditEvent) => {
-    if (event.accion === "DELETE") {
-      return (
-        <span className="text-xs text-slate-600 dark:text-slate-300">
-          Tarea eliminada.
-        </span>
-      );
-    }
-    if (event.accion === "CREATE") {
-      return (
-        <span className="text-xs text-slate-600 dark:text-slate-300">
-          Tarea creada.
-        </span>
-      );
-    }
     const before = event.diff.before ?? {};
     const after = event.diff.after ?? {};
-    const keys = Array.from(
-      new Set([...Object.keys(before), ...Object.keys(after)])
-    ).filter((key) => {
-      const beforeValue = (before as Record<string, unknown>)[key];
-      const afterValue = (after as Record<string, unknown>)[key];
-      return JSON.stringify(beforeValue) !== JSON.stringify(afterValue);
-    });
+    if (event.accion === "CREATE") {
+      const keys = Object.keys(after);
+      if (keys.length === 0) {
+        return <span className="text-xs dark:text-slate-300">—</span>;
+      }
+      return (
+        <div className="space-y-2">
+          {keys.map((key) => (
+            <div
+              key={key}
+              className="grid grid-cols-[60px_1fr_auto_1fr] items-center gap-1 text-xs"
+            >
+              <span className="truncate font-medium text-slate-600 dark:text-slate-300">
+                {key}
+              </span>
+              <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                —
+              </span>
+              <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+              <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-900/50 dark:text-emerald-200">
+                {renderValue((after as Record<string, unknown>)[key])}
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (event.accion === "DELETE") {
+      const keys = Object.keys(before);
+      if (keys.length === 0) {
+        return <span className="text-xs dark:text-slate-300">—</span>;
+      }
+      return (
+        <div className="space-y-2">
+          {keys.map((key) => (
+            <div
+              key={key}
+              className="grid grid-cols-[60px_1fr_auto_1fr] items-center gap-1 text-xs"
+            >
+              <span className="truncate font-medium text-slate-600 dark:text-slate-300">
+                {key}
+              </span>
+              <span className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-rose-700 dark:border-rose-800/60 dark:bg-rose-900/40 dark:text-rose-200">
+                {renderValue((before as Record<string, unknown>)[key])}
+              </span>
+              <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+              <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                —
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    const keys = getDiffKeys(event).filter((key) => key !== "__event__");
     if (keys.length === 0) {
       return <span className="text-xs dark:text-slate-300">—</span>;
     }
@@ -170,11 +243,11 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
             <span className="truncate font-medium text-slate-600 dark:text-slate-300">
               {key}
             </span>
-            <span className="rounded-md bg-slate-50 px-2 py-1 text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
               {renderValue((before as Record<string, unknown>)[key])}
             </span>
             <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-            <span className="rounded-md bg-emerald-50 px-2 py-1 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200">
+            <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-900/50 dark:text-emerald-200">
               {renderValue((after as Record<string, unknown>)[key])}
             </span>
           </div>
@@ -195,28 +268,12 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
       </header>
       <div className="flex flex-wrap items-center gap-3">
         <Input
-          className="max-w-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-          placeholder="Buscar por título o Id"
+          className="w-64 border-slate-300 bg-white shadow-sm placeholder:text-slate-400 focus-visible:ring-[#0f1f3d]/30 dark:border-slate-700 dark:bg-slate-900 dark:placeholder:text-slate-500"
+          placeholder="Buscar y filtrar..."
           value={taskFilter}
           onChange={(event) => setTaskFilter(event.target.value)}
+          aria-label="Buscar tareas"
         />
-        <div className="min-w-[180px]">
-          <Select
-            value={actionFilter}
-            onValueChange={(value) => setActionFilter(value as ActionFilter)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Filtrar acción" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Todas</SelectItem>
-              <SelectItem value="CREATE">Create</SelectItem>
-              <SelectItem value="UPDATE">Update</SelectItem>
-              <SelectItem value="DELETE">Delete</SelectItem>
-              <SelectItem value="MOVE">Move</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
         <Button
           variant="secondary"
           onClick={handleCopy}
@@ -225,28 +282,199 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
           <Copy className="h-4 w-4" />
           Copiar resumen
         </Button>
-        {(actionFilter !== "ALL" || taskFilter) && (
-          <Button
-            variant="ghost"
-            className="dark:text-slate-200 dark:hover:bg-slate-800"
-            onClick={() => {
-              setActionFilter("ALL");
-              setTaskFilter("");
-            }}
-          >
-            Limpiar
-          </Button>
-        )}
+        {null}
       </div>
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800">
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="dark:text-slate-200">Timestamp</TableHead>
-              <TableHead className="dark:text-slate-200">Accion</TableHead>
-              <TableHead className="dark:text-slate-200">TaskId</TableHead>
-              <TableHead className="dark:text-slate-200">Tarea</TableHead>
-              <TableHead className="dark:text-slate-200">Diff</TableHead>
+              <TableHead className="rounded-tl-xl bg-slate-100 pl-6 text-slate-700 dark:bg-slate-800/70 dark:text-slate-100">
+                <Popover
+                  open={openFilter === "timestamp"}
+                  onOpenChange={(open) => setOpenFilter(open ? "timestamp" : null)}
+                >
+                  <div className="inline-flex items-center gap-1">
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 text-sm font-semibold text-slate-700 transition-colors hover:text-slate-900 dark:text-slate-100 dark:hover:text-white"
+                      >
+                        Timestamp
+                        {sortOrder === "newest" ? (
+                          <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                        ) : null}
+                      </button>
+                    </PopoverTrigger>
+                    {sortOrder !== "newest" ? (
+                      <button
+                        type="button"
+                        className="inline-flex h-4 w-4 items-center justify-center rounded text-slate-500 hover:text-slate-700 dark:text-slate-300"
+                        onClick={() => setSortOrder("newest")}
+                        aria-label="Quitar filtro de timestamp"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    ) : null}
+                  </div>
+                  <PopoverContent
+                    className="w-52 border-slate-200 bg-white p-2 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                    align="start"
+                  >
+                    <div className="space-y-0.5">
+                      {[
+                        { value: "newest", label: "Más nuevo primero" },
+                        { value: "oldest", label: "Más viejo primero" },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm text-slate-800 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+                          onClick={() => {
+                            setSortOrder(option.value as SortOrder);
+                            setOpenFilter(null);
+                          }}
+                        >
+                          <span>{option.label}</span>
+                          {sortOrder === option.value ? (
+                            <Check className="h-3.5 w-3.5 text-slate-500 dark:text-slate-300" />
+                          ) : null}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </TableHead>
+              <TableHead className="bg-slate-100 text-slate-700 dark:bg-slate-800/70 dark:text-slate-100">
+                <Popover
+                  open={openFilter === "action"}
+                  onOpenChange={(open) => setOpenFilter(open ? "action" : null)}
+                >
+                  <div className="inline-flex items-center gap-1">
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 text-sm font-semibold text-slate-700 transition-colors hover:text-slate-900 dark:text-slate-100 dark:hover:text-white"
+                      >
+                        Acción
+                        {actionFilter === "ALL" ? (
+                          <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                        ) : null}
+                      </button>
+                    </PopoverTrigger>
+                    {actionFilter !== "ALL" ? (
+                      <button
+                        type="button"
+                        className="inline-flex h-4 w-4 items-center justify-center rounded text-slate-500 hover:text-slate-700 dark:text-slate-300"
+                        onClick={() => setActionFilter("ALL")}
+                        aria-label="Quitar filtro de accion"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    ) : null}
+                  </div>
+                  <PopoverContent
+                    className="w-48 border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                    align="start"
+                  >
+                    <div className="space-y-0.5">
+                      {(["ALL", "CREATE", "UPDATE", "DELETE", "MOVE"] as const).map(
+                        (action) => {
+                          const label =
+                            action === "ALL"
+                              ? "Todas"
+                              : actionLabels[action as AuditAction];
+                          return (
+                            <button
+                              key={action}
+                              type="button"
+                              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm text-slate-800 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+                              onClick={() => {
+                                setActionFilter(
+                                  action === "ALL" ? "ALL" : (action as AuditAction)
+                                );
+                                setOpenFilter(null);
+                              }}
+                            >
+                              <span>{label}</span>
+                              {actionFilter ===
+                              (action === "ALL" ? "ALL" : action) ? (
+                                <Check className="h-3.5 w-3.5 text-slate-500 dark:text-slate-300" />
+                              ) : null}
+                            </button>
+                          );
+                        }
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </TableHead>
+              <TableHead className="bg-slate-100 text-slate-700 dark:bg-slate-800/70 dark:text-slate-100">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-100">
+                  TaskId
+                </span>
+              </TableHead>
+              <TableHead className="bg-slate-100 text-slate-700 dark:bg-slate-800/70 dark:text-slate-100">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-100">
+                  Tarea
+                </span>
+              </TableHead>
+              <TableHead className="rounded-tr-xl bg-slate-100 pr-6 text-slate-700 dark:bg-slate-800/70 dark:text-slate-100">
+                <Popover
+                  open={openFilter === "diff"}
+                  onOpenChange={(open) => setOpenFilter(open ? "diff" : null)}
+                >
+                  <div className="inline-flex items-center gap-1">
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 text-sm font-semibold text-slate-700 transition-colors hover:text-slate-900 dark:text-slate-100 dark:hover:text-white"
+                      >
+                        Diff
+                        {diffFilter === "ALL" ? (
+                          <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                        ) : null}
+                      </button>
+                    </PopoverTrigger>
+                    {diffFilter !== "ALL" ? (
+                      <button
+                        type="button"
+                        className="inline-flex h-4 w-4 items-center justify-center rounded text-slate-500 hover:text-slate-700 dark:text-slate-300"
+                        onClick={() => setDiffFilter("ALL")}
+                        aria-label="Quitar filtro de diff"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    ) : null}
+                  </div>
+                  <PopoverContent
+                    className="w-64 border-slate-200 bg-white p-2 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                    align="start"
+                  >
+                    <div className="space-y-0.5">
+                      {[
+                        { value: "ALL", label: "Todos" },
+                        { value: "WITH_CHANGES", label: "Con cambios" },
+                        { value: "NO_CHANGES", label: "Sin cambios" },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm text-slate-800 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+                          onClick={() => {
+                            setDiffFilter(option.value as DiffFilter);
+                            setOpenFilter(null);
+                          }}
+                        >
+                          <span>{option.label}</span>
+                          {diffFilter === option.value ? (
+                            <Check className="h-3.5 w-3.5 text-slate-500 dark:text-slate-300" />
+                          ) : null}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -259,7 +487,7 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
             ) : (
               filteredLog.map((event) => (
                 <TableRow key={event.id}>
-                  <TableCell className="text-xs text-slate-600 dark:text-slate-300">
+                  <TableCell className="pl-6 text-xs text-slate-600 dark:text-slate-300">
                     {new Date(event.timestamp).toLocaleString()}
                   </TableCell>
                   <TableCell>
@@ -276,7 +504,7 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
                   <TableCell className="text-xs text-slate-600 dark:text-slate-300">
                     {getTitleFromEvent(event) || "—"}
                   </TableCell>
-                  <TableCell className="text-xs text-slate-600 dark:text-slate-300">
+                  <TableCell className="pr-6 text-xs text-slate-600 dark:text-slate-300">
                     {renderDiff(event)}
                   </TableCell>
                 </TableRow>

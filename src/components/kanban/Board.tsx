@@ -35,6 +35,7 @@ import { Plus } from "lucide-react";
 import TaskCardPreview from "@/components/kanban/TaskCardPreview";
 import { filterTasks } from "@/lib/query";
 import { Input } from "@/components/ui/input";
+import { motion } from "framer-motion";
 
 const columnMeta: Array<{ title: string; status: TaskStatus }> = [
   { title: "To Do", status: "todo" },
@@ -352,8 +353,12 @@ export default function Board({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
+    <motion.div
+      className="space-y-6"
+      layout
+      transition={{ duration: 0.25, ease: "easeOut" }}
+    >
+      <motion.div className="flex flex-wrap items-center gap-3" layout>
         <Input
           className="w-64 border-slate-300 bg-white shadow-sm placeholder:text-slate-400 focus-visible:ring-[#0f1f3d]/30 dark:border-slate-700 dark:bg-slate-900 dark:placeholder:text-slate-500"
           placeholder="Buscar y filtrar..."
@@ -371,7 +376,7 @@ export default function Board({
           <Plus />
           Nueva tarea
         </Button>
-      </div>
+      </motion.div>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -379,7 +384,7 @@ export default function Board({
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="grid gap-6 lg:grid-cols-3">
+        <motion.div className="grid gap-6 lg:grid-cols-3" layout>
           {columnMeta.map((column) => (
             <Column
               key={column.status}
@@ -394,7 +399,7 @@ export default function Board({
               onSaveNotes={handleSaveNotes}
             />
           ))}
-        </div>
+        </motion.div>
         <DragOverlay>
           {activeTaskId && state ? (
             <TaskCardPreview
@@ -451,6 +456,6 @@ export default function Board({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </motion.div>
   );
 }
