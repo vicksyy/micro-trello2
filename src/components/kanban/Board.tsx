@@ -30,12 +30,13 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { v4 as uuidv4 } from "uuid";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import TaskCardPreview from "@/components/kanban/TaskCardPreview";
 import { filterTasks } from "@/lib/query";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
+import { useHotkeys } from "react-hotkeys-hook";
 
 const columnMeta: Array<{ title: string; status: TaskStatus }> = [
   { title: "To Do", status: "todo" },
@@ -66,6 +67,9 @@ export default function Board({
     height: number;
   } | null>(null);
   const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [flashTaskId, setFlashTaskId] = useState<string | null>(null);
+  const flashTimer = useRef<number | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
 
   useEffect(() => {
@@ -159,6 +163,25 @@ export default function Board({
     setCreateStatus(status);
     setCreateOpen(true);
   };
+
+  useHotkeys(
+    "n",
+    (event) => {
+      event.preventDefault();
+      setCreateStatus("todo");
+      setCreateOpen(true);
+    },
+    { enableOnFormTags: false, enableOnContentEditable: false }
+  );
+
+  useHotkeys(
+    "/",
+    (event) => {
+      event.preventDefault();
+      searchRef.current?.focus();
+    },
+    { enableOnFormTags: false, enableOnContentEditable: false }
+  );
 
   const handleEdit = (values: TaskFormValues) => {
     if (!state || !editTask) return;
@@ -339,6 +362,52 @@ export default function Board({
     });
   };
 
+  const moveTaskByKeyboard = (taskId: string, direction: "left" | "right") => {
+    if (!state) return;
+    const current = state.tasks.find((task) => task.id === taskId);
+    if (!current) return;
+    const order = ["todo", "doing", "done"] as const;
+    const currentIndex = order.indexOf(current.estado);
+    const nextIndex =
+      direction === "left" ? currentIndex - 1 : currentIndex + 1;
+    if (nextIndex < 0 || nextIndex >= order.length) return;
+    const nextStatus = order[nextIndex];
+    const sourceTasks = tasksByStatus[current.estado]
+      .filter((task) => task.id !== taskId)
+      .map((task) => task.id);
+    const targetTasks = [...tasksByStatus[nextStatus].map((task) => task.id), taskId];
+    const movedTasks = state.tasks.map((task) =>
+      task.id === taskId ? { ...task, estado: nextStatus } : task
+    );
+    const withSourceOrder = applyOrder(movedTasks, sourceTasks);
+    const withTargetOrder = applyOrder(withSourceOrder, targetTasks);
+    const updatedTask = withTargetOrder.find((task) => task.id === taskId);
+    if (!updatedTask) return;
+    const auditEvent: AuditEvent = {
+      id: uuidv4(),
+      timestamp: new Date().toISOString(),
+      accion: "MOVE",
+      taskId,
+      diff: {
+        before: { estado: current.estado },
+        after: { estado: updatedTask.estado },
+      },
+      userLabel: "Alumno/a",
+    };
+    setState({
+      ...state,
+      tasks: withTargetOrder,
+      auditLog: [auditEvent, ...state.auditLog],
+    });
+    setFlashTaskId(taskId);
+    if (flashTimer.current) {
+      window.clearTimeout(flashTimer.current);
+    }
+    flashTimer.current = window.setTimeout(() => {
+      setFlashTaskId((currentId) => (currentId === taskId ? null : currentId));
+    }, 700);
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveTaskId(String(event.active.id));
     const rect = event.active.rect?.current?.initial;
@@ -365,6 +434,7 @@ export default function Board({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           aria-label="Buscar tareas"
+          ref={searchRef}
         />
         <Button
           onClick={() => {
@@ -393,10 +463,12 @@ export default function Board({
               tasks={tasksByStatus[column.status]}
               onEditTask={setEditTask}
               onDeleteTask={setDeleteTask}
+              onMoveTaskStatus={moveTaskByKeyboard}
               onCreateTask={handleCreateFromColumn}
               showGodMode={godModeEnabled}
               godModeEditable={godModeEditable}
               onSaveNotes={handleSaveNotes}
+              highlightTaskId={flashTaskId}
             />
           ))}
         </motion.div>

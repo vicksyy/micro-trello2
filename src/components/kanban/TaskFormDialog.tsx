@@ -34,12 +34,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Resolver, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { es } from "date-fns/locale";
+import { FocusScope } from "react-aria";
 
 const taskFormSchema = z.object({
   titulo: z.string().min(3, "Mínimo 3 caracteres"),
@@ -109,6 +110,7 @@ export default function TaskFormDialog({
   onClose,
   onSubmit,
 }: TaskFormDialogProps) {
+  const titleRef = useRef<HTMLInputElement>(null);
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema) as Resolver<TaskFormValues>,
     defaultValues,
@@ -135,18 +137,25 @@ export default function TaskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={(value) => (!value ? onClose() : null)}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          {description ? (
-            <DialogDescription>{description}</DialogDescription>
-          ) : null}
-        </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4"
-          >
+      <DialogContent
+        className="sm:max-w-lg"
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          titleRef.current?.focus();
+        }}
+      >
+        <FocusScope contain restoreFocus autoFocus={false}>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            {description ? (
+              <DialogDescription>{description}</DialogDescription>
+            ) : null}
+          </DialogHeader>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-4"
+            >
             <FormField
               control={form.control}
               name="titulo"
@@ -154,7 +163,11 @@ export default function TaskFormDialog({
                 <FormItem>
                   <FormLabel>Título</FormLabel>
                   <FormControl>
-                    <Input placeholder="Título de la tarea" {...field} />
+                    <Input
+                      placeholder="Título de la tarea"
+                      {...field}
+                      ref={titleRef}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -351,8 +364,9 @@ export default function TaskFormDialog({
                 Guardar
               </Button>
             </div>
-          </form>
-        </Form>
+            </form>
+          </Form>
+        </FocusScope>
       </DialogContent>
     </Dialog>
   );

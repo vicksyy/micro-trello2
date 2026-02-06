@@ -12,6 +12,8 @@ type ColumnProps = {
   tasks: Task[];
   onEditTask: (task: Task) => void;
   onDeleteTask: (task: Task) => void;
+  onMoveTaskStatus?: (taskId: string, direction: "left" | "right") => void;
+  highlightTaskId?: string | null;
   onCreateTask?: (status: TaskStatus) => void;
   showGodMode: boolean;
   godModeEditable?: boolean;
@@ -28,6 +30,8 @@ export default function Column({
   tasks,
   onEditTask,
   onDeleteTask,
+  onMoveTaskStatus,
+  highlightTaskId,
   onCreateTask,
   showGodMode,
   godModeEditable = false,
@@ -76,6 +80,8 @@ export default function Column({
               task={task}
               onEdit={onEditTask}
               onDelete={onDeleteTask}
+              onMoveStatus={onMoveTaskStatus}
+              highlightMove={highlightTaskId === task.id}
               showGodMode={showGodMode}
               godModeEditable={godModeEditable}
               onSaveNotes={onSaveNotes}

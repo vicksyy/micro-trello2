@@ -13,6 +13,8 @@ type TaskCardProps = {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
+  onMoveStatus?: (taskId: string, direction: "left" | "right") => void;
+  highlightMove?: boolean;
   showGodMode: boolean;
   godModeEditable?: boolean;
   onSaveNotes?: (
@@ -32,6 +34,8 @@ export default function TaskCard({
   task,
   onEdit,
   onDelete,
+  onMoveStatus,
+  highlightMove = false,
   showGodMode,
   godModeEditable = false,
   onSaveNotes,
@@ -73,11 +77,42 @@ export default function TaskCard({
     <article
       ref={setNodeRef}
       style={style}
-      className={`rounded-xl border bg-white p-4 shadow-md dark:bg-slate-900/70 ${
+      tabIndex={0}
+      role="group"
+      aria-label={`Tarea: ${task.titulo}`}
+      aria-keyshortcuts="Enter, E, Delete, Backspace, ArrowLeft, ArrowRight"
+      onKeyDown={(event) => {
+        if (!(event.target instanceof HTMLElement)) return;
+        if (event.target !== event.currentTarget) return;
+        if (
+          event.target.closest(
+            "input, textarea, select, button, a, [contenteditable='true']"
+          )
+        ) {
+          return;
+        }
+        if (event.key === "Enter" || event.key.toLowerCase() === "e") {
+          event.preventDefault();
+          onEdit(task);
+        }
+        if (event.key === "Delete" || event.key === "Backspace") {
+          event.preventDefault();
+          onDelete(task);
+        }
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          onMoveStatus?.(task.id, "left");
+        }
+        if (event.key === "ArrowRight") {
+          event.preventDefault();
+          onMoveStatus?.(task.id, "right");
+        }
+      }}
+      className={`relative rounded-xl border bg-white p-4 shadow-md outline-none focus-visible:z-10 focus-visible:bg-slate-50 focus-visible:after:absolute focus-visible:after:inset-0 focus-visible:after:rounded-xl focus-visible:after:shadow-[inset_0_0_0_2px_rgba(15,31,61,0.6)] focus-visible:after:pointer-events-none dark:bg-slate-900/70 dark:focus-visible:bg-slate-900/90 dark:focus-visible:after:shadow-[inset_0_0_0_2px_rgba(226,232,240,0.7)] ${
         isDragging
           ? "border-slate-400 opacity-70 dark:border-slate-500"
           : "border-slate-200 dark:border-slate-700"
-      }`}
+      } ${highlightMove ? "task-move-flash" : ""}`}
       {...attributes}
     >
       <div
