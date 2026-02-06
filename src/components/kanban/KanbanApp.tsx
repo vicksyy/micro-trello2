@@ -62,6 +62,17 @@ export default function KanbanApp() {
     setState(getInitialState());
   }, []);
 
+  const setBoardState: React.Dispatch<React.SetStateAction<BoardState>> = (
+    value
+  ) => {
+    setState((prev) => {
+      if (!prev) return prev;
+      return typeof value === "function"
+        ? (value as (current: BoardState) => BoardState)(prev)
+        : value;
+    });
+  };
+
   const handleExport = () => {
     if (!state) return;
     const blob = new Blob([JSON.stringify(state, null, 2)], {
@@ -329,11 +340,11 @@ export default function KanbanApp() {
               ) : null}
             </AnimatePresence>
             <motion.div layout>
-              <Board
-                state={state}
-                setState={setState}
-                godModeEnabled={state.godMode.enabled}
-              />
+            <Board
+              state={state}
+              setState={setBoardState}
+              godModeEnabled={state.godMode.enabled}
+            />
             </motion.div>
           </LayoutGroup>
         </TabsContent>

@@ -23,8 +23,8 @@ const auditSchema = z.object({
   taskId: z.string().min(1),
   diff: z
     .object({
-      before: z.record(z.unknown()).optional(),
-      after: z.record(z.unknown()).optional(),
+      before: z.record(z.string(), z.unknown()).optional(),
+      after: z.record(z.string(), z.unknown()).optional(),
     })
     .optional()
     .default({}),

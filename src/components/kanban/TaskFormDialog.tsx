@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/popover";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Resolver, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -110,7 +110,7 @@ export default function TaskFormDialog({
   onSubmit,
 }: TaskFormDialogProps) {
   const form = useForm<TaskFormValues>({
-    resolver: zodResolver(taskFormSchema),
+    resolver: zodResolver(taskFormSchema) as Resolver<TaskFormValues>,
     defaultValues,
   });
 
