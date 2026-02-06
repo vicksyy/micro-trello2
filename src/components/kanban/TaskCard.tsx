@@ -77,8 +77,6 @@ export default function TaskCard({
     <article
       ref={setNodeRef}
       style={style}
-      tabIndex={0}
-      role="group"
       aria-label={`Tarea: ${task.titulo}`}
       aria-keyshortcuts="Enter, E, Delete, Backspace, ArrowLeft, ArrowRight"
       onKeyDown={(event) => {
