@@ -27,17 +27,26 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Task, TaskPriority, TaskStatus } from "@/types";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { es } from "date-fns/locale";
 
 const taskFormSchema = z.object({
-  titulo: z.string().min(3, "Minimo 3 caracteres"),
+  titulo: z.string().min(3, "Mínimo 3 caracteres"),
   descripcion: z.string().optional(),
   prioridad: z.enum(["low", "medium", "high"]),
   tags: z.string().optional(),
-  estimacionMin: z.coerce.number().int().min(1, "Minimo 1 minuto"),
+  estimacionMin: z.coerce.number().int().min(1, "Mínimo 1 minuto"),
   fechaLimite: z.string().optional(),
   estado: z.enum(["todo", "doing", "done"]),
   rubricaScore: z.preprocess(
@@ -69,6 +78,26 @@ const defaultValues: TaskFormValues = {
   estado: "todo",
   rubricaScore: undefined,
   rubricaComentario: "",
+};
+
+const formatDateLabel = (date: Date) =>
+  new Intl.DateTimeFormat("es-ES", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+
+const toInputDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseInputDate = (value: string) => {
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return undefined;
+  return new Date(year, month - 1, day);
 };
 
 export default function TaskFormDialog({
@@ -123,9 +152,9 @@ export default function TaskFormDialog({
               name="titulo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Titulo</FormLabel>
+                  <FormLabel>Título</FormLabel>
                   <FormControl>
-                    <Input placeholder="Titulo de la tarea" {...field} />
+                    <Input placeholder="Título de la tarea" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -136,7 +165,7 @@ export default function TaskFormDialog({
               name="descripcion"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descripcion</FormLabel>
+                  <FormLabel>Descripción</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Notas opcionales"
@@ -204,7 +233,7 @@ export default function TaskFormDialog({
                 name="estimacionMin"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Estimacion (min)</FormLabel>
+                  <FormLabel>Estimación (min)</FormLabel>
                     <FormControl>
                       <Input type="number" min={1} {...field} />
                     </FormControl>
@@ -217,10 +246,40 @@ export default function TaskFormDialog({
                 name="fechaLimite"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Fecha limite</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
+                    <FormLabel>Fecha límite</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !field.value && "text-slate-500"
+                            )}
+                          >
+                            <CalendarIcon className="h-4 w-4" />
+                            {field.value
+                              ? formatDateLabel(parseInputDate(field.value) ?? new Date())
+                              : "Selecciona una fecha"}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          locale={es}
+                          className="text-[13px]"
+                          selected={
+                            field.value ? parseInputDate(field.value) : undefined
+                          }
+                          fromDate={new Date()}
+                          onSelect={(date) =>
+                            field.onChange(date ? toInputDate(date) : "")
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -238,7 +297,6 @@ export default function TaskFormDialog({
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>Separados por coma.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

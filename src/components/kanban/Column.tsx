@@ -12,6 +12,7 @@ type ColumnProps = {
   tasks: Task[];
   onEditTask: (task: Task) => void;
   onDeleteTask: (task: Task) => void;
+  onCreateTask?: (status: TaskStatus) => void;
   showGodMode: boolean;
   godModeEditable?: boolean;
   onSaveNotes?: (
@@ -27,11 +28,12 @@ export default function Column({
   tasks,
   onEditTask,
   onDeleteTask,
+  onCreateTask,
   showGodMode,
   godModeEditable = false,
   onSaveNotes,
 }: ColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({
+  const { setNodeRef } = useDroppable({
     id: status,
   });
 
@@ -39,47 +41,33 @@ export default function Column({
     status === "todo" ? ClipboardList : status === "doing" ? Loader2 : CheckCircle2;
 
   return (
-    <section
-      ref={setNodeRef}
-      className={`flex h-[480px] flex-col rounded-2xl border p-4 shadow-sm ${
-        isOver
-          ? "border-slate-400 bg-slate-100 dark:border-slate-500 dark:bg-slate-800"
-          : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900"
-      }`}
-    >
-      <header
-        className={`-mx-4 flex items-center justify-between border-b-2 px-4 pb-3 ${
-          status === "todo"
-            ? "border-amber-400"
-            : status === "doing"
-            ? "border-sky-400"
-            : "border-emerald-400"
-        }`}
-      >
-        <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-100">
-          <HeaderIcon className="h-4 w-4 text-slate-500 dark:text-slate-300" />
-          {title}
-        </h2>
-        <span
-          className={`rounded-full border border-slate-300 px-2 py-0.5 text-xs font-medium text-slate-800 dark:border-slate-700 dark:text-slate-900 ${
+    <section ref={setNodeRef} className="flex h-[520px] flex-col">
+      <header className="space-y-2">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+          <HeaderIcon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+          <span>{title}</span>
+          <span className="text-slate-400 dark:text-slate-500">
+            ({tasks.length})
+          </span>
+        </div>
+        <div
+          className={`h-0.5 w-full rounded-full ${
             status === "todo"
-              ? "bg-amber-100"
+              ? "bg-rose-500"
               : status === "doing"
-              ? "bg-sky-100"
-              : "bg-emerald-100"
+              ? "bg-sky-500"
+              : "bg-emerald-500"
           }`}
-        >
-          {tasks.length}
-        </span>
+        />
       </header>
       <SortableContext
         items={tasks.map((task) => task.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="mt-4 flex flex-1 flex-col gap-3 overflow-y-auto pr-1">
+        <div className="mt-4 flex flex-1 flex-col gap-4 overflow-y-auto pr-1">
           {tasks.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-300">
-              No hay tareas aqui todavia.
+            <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-xs text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-300">
+              No hay tareas aquí todavía.
             </div>
           ) : null}
           {tasks.map((task) => (
@@ -93,6 +81,13 @@ export default function Column({
               onSaveNotes={onSaveNotes}
             />
           ))}
+          <button
+            type="button"
+            onClick={() => onCreateTask?.(status)}
+            className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-semibold text-emerald-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-950/60 dark:text-emerald-300"
+          >
+            + Añadir tarea
+          </button>
         </div>
       </SortableContext>
     </section>

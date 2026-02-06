@@ -13,6 +13,7 @@ import { boardStateSchema } from "@/lib/validation";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { FileDown, FileUp, Wand2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 type IconButtonWithTooltipProps = {
   label: string;
@@ -36,7 +37,6 @@ function IconButtonWithTooltip({
         variant="secondary"
         size="icon"
         aria-label={label}
-        title={label}
         aria-pressed={pressed}
         onClick={onClick}
         className={className}
@@ -54,6 +54,7 @@ function IconButtonWithTooltip({
 export default function KanbanApp() {
   const [state, setState] = useState<BoardState | null>(null);
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [tabValue, setTabValue] = useState("board");
   useEffect(() => {
     setState(getInitialState());
   }, []);
@@ -114,7 +115,7 @@ export default function KanbanApp() {
         tasks: updatedTasks,
         auditLog: [...auditEntries, ...incoming.auditLog],
       });
-      toast.success("Importacion completada");
+      toast.success("Importación completada");
     } catch (error) {
       setImportErrors(["No se pudo leer el archivo JSON."]);
     }
@@ -132,7 +133,7 @@ export default function KanbanApp() {
     <div className="space-y-5">
       {importErrors.length > 0 ? (
         <Alert variant="destructive">
-          <AlertTitle>Errores de importacion</AlertTitle>
+          <AlertTitle>Errores de importación</AlertTitle>
           <AlertDescription>
             <ul className="list-disc space-y-1 pl-4">
               {importErrors.map((error) => (
@@ -142,11 +143,42 @@ export default function KanbanApp() {
           </AlertDescription>
         </Alert>
       ) : null}
-      <Tabs defaultValue="board" className="space-y-6">
+      <Tabs
+        value={tabValue}
+        onValueChange={setTabValue}
+        className="space-y-6"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <TabsList>
-            <TabsTrigger value="board">Tablero</TabsTrigger>
-            <TabsTrigger value="audit">Auditoria</TabsTrigger>
+          <TabsList
+            variant="line"
+            className="border-b border-slate-200 pb-1 dark:border-slate-700"
+          >
+            <TabsTrigger
+              value="board"
+              className="relative after:hidden"
+            >
+              Tablero
+              {tabValue === "board" ? (
+                <motion.span
+                  layoutId="tabs-underline"
+                  className="absolute inset-x-0 -bottom-[6px] h-0.5 rounded-full bg-[#0f1f3d] dark:bg-slate-100"
+                  transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                />
+              ) : null}
+            </TabsTrigger>
+            <TabsTrigger
+              value="audit"
+              className="relative after:hidden"
+            >
+              Auditoría
+              {tabValue === "audit" ? (
+                <motion.span
+                  layoutId="tabs-underline"
+                  className="absolute inset-x-0 -bottom-[6px] h-0.5 rounded-full bg-[#0f1f3d] dark:bg-slate-100"
+                  transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                />
+              ) : null}
+            </TabsTrigger>
           </TabsList>
           <div className="flex flex-wrap items-center gap-3">
             <IconButtonWithTooltip
@@ -189,7 +221,6 @@ export default function KanbanApp() {
                 size="icon"
                 className="border border-slate-200 bg-white/60 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-800"
                 aria-label="Importar JSON"
-                title="Importar JSON"
               >
                 <span>
                   <FileUp />

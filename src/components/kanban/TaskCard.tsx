@@ -22,9 +22,9 @@ type TaskCardProps = {
 };
 
 const priorityStyles: Record<Task["prioridad"], string> = {
-  low: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  medium: "bg-amber-50 text-amber-800 border-amber-200",
-  high: "bg-rose-50 text-rose-700 border-rose-200",
+  low: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-200 dark:border-emerald-500/40",
+  medium: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/20 dark:text-amber-200 dark:border-amber-500/40",
+  high: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-200 dark:border-rose-500/40",
 };
 
 export default function TaskCard({
@@ -72,10 +72,10 @@ export default function TaskCard({
     <article
       ref={setNodeRef}
       style={style}
-      className={`rounded-xl border bg-white p-4 shadow-sm dark:bg-slate-900/70 ${
+      className={`rounded-xl border bg-white p-4 shadow-md dark:bg-slate-900/70 ${
         isDragging
-          ? "border-slate-400 opacity-70 dark:border-slate-600"
-          : "border-slate-200 dark:border-slate-800"
+          ? "border-slate-400 opacity-70 dark:border-slate-500"
+          : "border-slate-200 dark:border-slate-700"
       }`}
       {...attributes}
     >
@@ -119,7 +119,7 @@ export default function TaskCard({
           </div>
         </div>
       </div>
-      <div className="-mx-4 mt-3 border-t border-slate-200 dark:border-slate-800" />
+      <div className="-mx-4 mt-3 border-t border-slate-200/70 dark:border-slate-800" />
       {task.descripcion ? (
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {task.descripcion}
@@ -138,18 +138,43 @@ export default function TaskCard({
       <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
         <span>{task.estimacionMin} min</span>
         {task.fechaLimite ? (
-          <span>Limite: {new Date(task.fechaLimite).toLocaleDateString()}</span>
+          <span className="flex items-center gap-2">
+            <span>
+              Límite: {new Date(task.fechaLimite).toLocaleDateString()}
+            </span>
+            {(() => {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const due = new Date(task.fechaLimite);
+              due.setHours(0, 0, 0, 0);
+              const diffDays = Math.ceil(
+                (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+              );
+              if (diffDays < 0) {
+                return (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-200">
+                    Vencida
+                  </span>
+                );
+              }
+              return diffDays <= 7 ? (
+                <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-500/20 dark:text-rose-200">
+                  {diffDays === 0 ? "Vence hoy" : `${diffDays} días`}
+                </span>
+              ) : null;
+            })()}
+          </span>
         ) : (
-          <span>Sin limite</span>
+          <span>Sin límite</span>
         )}
       </div>
       {showGodMode ? (
-        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-300">
+        <div className="mt-4 -mx-4 -mb-4 rounded-b-xl border-t border-slate-200 bg-slate-50 px-4 py-3 pb-4 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-300">
           <p className="font-semibold text-slate-700 dark:text-slate-200">
-            Observaciones
+            Observaciones de Javi
           </p>
           <p className="mt-1">
-            {task.rubricaComentario?.trim() || "Sin observaciones."}
+            {task.rubricaComentario?.trim() || "Sin observaciones de Javi."}
           </p>
           <p className="mt-2">
             Nota:{" "}
@@ -200,13 +225,13 @@ export default function TaskCard({
           </div>
           <div>
             <p className="font-semibold text-slate-700 dark:text-slate-200">
-              Observaciones
+              Observaciones de Javi
             </p>
             <Textarea
               className="mt-2 min-h-[80px] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               value={observaciones}
               onChange={(event) => setObservaciones(event.target.value)}
-              placeholder="Observaciones del rubro o feedback"
+              placeholder="Observaciones de Javi"
             />
           </div>
           <div className="flex items-center justify-between">

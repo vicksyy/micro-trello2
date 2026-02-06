@@ -37,7 +37,7 @@ import { filterTasks } from "@/lib/query";
 import { Input } from "@/components/ui/input";
 
 const columnMeta: Array<{ title: string; status: TaskStatus }> = [
-  { title: "Todo", status: "todo" },
+  { title: "To Do", status: "todo" },
   { title: "Doing", status: "doing" },
   { title: "Done", status: "done" },
 ];
@@ -58,6 +58,7 @@ export default function Board({
   const [createOpen, setCreateOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
+  const [createStatus, setCreateStatus] = useState<TaskStatus>("todo");
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [overlaySize, setOverlaySize] = useState<{
     width: number;
@@ -70,6 +71,20 @@ export default function Board({
     if (!state) return;
     writeState(state);
   }, [state]);
+
+  const compareByDueDate = (a: Task, b: Task) => {
+    const aDate = a.fechaLimite ? new Date(a.fechaLimite) : null;
+    const bDate = b.fechaLimite ? new Date(b.fechaLimite) : null;
+    if (aDate && bDate) {
+      const diff = aDate.getTime() - bDate.getTime();
+      if (diff !== 0) return diff;
+    } else if (aDate && !bDate) {
+      return -1;
+    } else if (!aDate && bDate) {
+      return 1;
+    }
+    return (a.orden ?? 0) - (b.orden ?? 0);
+  };
 
   const tasksByStatus = useMemo(() => {
     const base = {
@@ -84,10 +99,11 @@ export default function Board({
       return acc;
     }, base);
     (Object.keys(grouped) as TaskStatus[]).forEach((status) => {
-      grouped[status].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+      grouped[status].sort(compareByDueDate);
     });
     return grouped;
   }, [state, query]);
+
 
   const getNextOrder = (status: TaskStatus) => {
     if (!state) return 1;
@@ -136,6 +152,11 @@ export default function Board({
       auditLog: [auditEvent, ...state.auditLog],
     });
     setCreateOpen(false);
+  };
+
+  const handleCreateFromColumn = (status: TaskStatus) => {
+    setCreateStatus(status);
+    setCreateOpen(true);
   };
 
   const handleEdit = (values: TaskFormValues) => {
@@ -334,14 +355,17 @@ export default function Board({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <Input
-          className="w-64"
+          className="w-64 border-slate-300 bg-white shadow-sm placeholder:text-slate-400 focus-visible:ring-[#0f1f3d]/30 dark:border-slate-700 dark:bg-slate-900 dark:placeholder:text-slate-500"
           placeholder="Buscar y filtrar..."
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           aria-label="Buscar tareas"
         />
         <Button
-          onClick={() => setCreateOpen(true)}
+          onClick={() => {
+            setCreateStatus("todo");
+            setCreateOpen(true);
+          }}
           className="bg-[#0f1f3d] text-white hover:bg-[#0c1931] dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
         >
           <Plus />
@@ -364,6 +388,7 @@ export default function Board({
               tasks={tasksByStatus[column.status]}
               onEditTask={setEditTask}
               onDeleteTask={setDeleteTask}
+              onCreateTask={handleCreateFromColumn}
               showGodMode={godModeEnabled}
               godModeEditable={godModeEditable}
               onSaveNotes={handleSaveNotes}
@@ -384,7 +409,17 @@ export default function Board({
       <TaskFormDialog
         open={createOpen}
         title="Nueva tarea"
-        description="Completa la informacion principal."
+        description="Completa la información principal."
+        initialTask={{
+          id: "",
+          titulo: "",
+          prioridad: "medium",
+          tags: [],
+          estimacionMin: 30,
+          fechaCreacion: "",
+          estado: createStatus,
+          orden: 1,
+        }}
         onClose={() => setCreateOpen(false)}
         onSubmit={handleCreate}
         godModeEnabled={godModeEnabled}
@@ -403,7 +438,7 @@ export default function Board({
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar tarea</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta accion no se puede deshacer.
+              Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

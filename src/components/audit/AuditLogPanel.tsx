@@ -37,13 +37,26 @@ const actionLabels: Record<AuditAction, string> = {
   MOVE: "Move",
 };
 
-const actionVariant: Record<AuditAction, "default" | "secondary" | "destructive"> =
-  {
-    CREATE: "secondary",
-    UPDATE: "default",
-    MOVE: "secondary",
-    DELETE: "destructive",
-  };
+const actionVariant: Record<
+  AuditAction,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
+  CREATE: "outline",
+  UPDATE: "outline",
+  MOVE: "outline",
+  DELETE: "outline",
+};
+
+const actionClass: Record<AuditAction, string> = {
+  CREATE:
+    "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/20 dark:text-emerald-200",
+  UPDATE:
+    "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/40 dark:bg-sky-500/20 dark:text-sky-200",
+  MOVE:
+    "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/40 dark:bg-violet-500/20 dark:text-violet-200",
+  DELETE:
+    "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/20 dark:text-rose-200",
+};
 
 export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
   const [actionFilter, setActionFilter] = useState<ActionFilter>("ALL");
@@ -83,14 +96,14 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
       { CREATE: 0, UPDATE: 0, DELETE: 0, MOVE: 0 }
     );
     const lines = [
-      `Reporte de auditoria - ${new Date().toLocaleString()}`,
+      `Reporte de auditoría - ${new Date().toLocaleString()}`,
       `Total eventos: ${auditLog.length}`,
       `CREATE: ${counts.CREATE}`,
       `UPDATE: ${counts.UPDATE}`,
       `DELETE: ${counts.DELETE}`,
       `MOVE: ${counts.MOVE}`,
       "",
-      "Ultimos eventos:",
+      "Últimos eventos:",
       ...auditLog.slice(0, 5).map(
         (event) =>
           `- ${event.accion} | ${event.taskId} | ${new Date(
@@ -100,6 +113,7 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
     ];
     return lines.join("\n");
   }, [auditLog]);
+
 
   const handleCopy = async () => {
     try {
@@ -137,7 +151,11 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
     const after = event.diff.after ?? {};
     const keys = Array.from(
       new Set([...Object.keys(before), ...Object.keys(after)])
-    );
+    ).filter((key) => {
+      const beforeValue = (before as Record<string, unknown>)[key];
+      const afterValue = (after as Record<string, unknown>)[key];
+      return JSON.stringify(beforeValue) !== JSON.stringify(afterValue);
+    });
     if (keys.length === 0) {
       return <span className="text-xs dark:text-slate-300">—</span>;
     }
@@ -169,10 +187,10 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Log de auditoria
+            Log de auditoría
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Filtra por accion o por taskId para revisar cambios.
+            Filtra por acción o por taskId para revisar cambios.
           </p>
         </div>
         <Button
@@ -190,7 +208,7 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
             onValueChange={(value) => setActionFilter(value as ActionFilter)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Filtrar accion" />
+          <SelectValue placeholder="Filtrar acción" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Todas</SelectItem>
@@ -203,7 +221,7 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
         </div>
         <Input
           className="max-w-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-          placeholder="Filtrar por taskId o titulo"
+          placeholder="Filtrar por taskId o título"
           value={taskFilter}
           onChange={(event) => setTaskFilter(event.target.value)}
         />
@@ -245,7 +263,10 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
                     {new Date(event.timestamp).toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={actionVariant[event.accion]}>
+                    <Badge
+                      variant={actionVariant[event.accion]}
+                      className={actionClass[event.accion]}
+                    >
                       {actionLabels[event.accion]}
                     </Badge>
                   </TableCell>
