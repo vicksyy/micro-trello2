@@ -237,10 +237,10 @@ export default function KanbanApp() {
                   prev ? { ...prev, godMode: { enabled: !prev.godMode.enabled } } : prev
                 )
               }
-              className={`border border-slate-200 dark:border-slate-700 ${
+              className={`border border-slate-200 bg-white/60 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-800 ${
                 state.godMode.enabled
-                  ? "bg-white text-slate-900 hover:bg-slate-100 dark:bg-slate-100 dark:text-slate-900"
-                  : "dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                  ? "bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-400/20 dark:text-amber-200 dark:hover:bg-amber-400/30"
+                  : ""
               }`}
             >
               <Wand2 />

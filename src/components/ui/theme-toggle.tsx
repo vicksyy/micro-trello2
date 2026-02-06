@@ -29,7 +29,7 @@ export default function ThemeToggle() {
       variant="secondary"
       size="icon"
       onClick={() => setDarkMode((prev) => !prev)}
-      className="border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+      className="border border-slate-200 bg-white/60 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-800"
       aria-label={darkMode ? "Activar modo claro" : "Activar modo oscuro"}
       title={darkMode ? "Activar modo claro" : "Activar modo oscuro"}
     >
