@@ -366,7 +366,7 @@ export default function Board({
             setCreateStatus("todo");
             setCreateOpen(true);
           }}
-          className="bg-[#0f1f3d] text-white hover:bg-[#0c1931] dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+          className="bg-[#0f1f3d] text-white transition-colors duration-300 hover:bg-[#0c1931] dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
         >
           <Plus />
           Nueva tarea

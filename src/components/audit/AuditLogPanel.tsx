@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AuditAction, AuditEvent } from "@/types";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
@@ -86,6 +86,7 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
       return matchAction && matchTask;
     });
   }, [auditLog, actionFilter, taskFilter]);
+
 
   const summaryText = useMemo(() => {
     const counts = auditLog.reduce<Record<AuditAction, number>>(
@@ -183,32 +184,29 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
   };
 
   return (
-    <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+    <section className="space-y-4">
+      <header className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Log de auditoría
           </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Filtra por acción o por taskId para revisar cambios.
-          </p>
         </div>
-        <Button
-          variant="secondary"
-          onClick={handleCopy}
-          className="dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-        >
-          Copiar resumen
-        </Button>
+        <div className="h-px w-full rounded-full bg-[#0f1f3d] dark:bg-slate-200" />
       </header>
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          className="max-w-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          placeholder="Buscar por título o Id"
+          value={taskFilter}
+          onChange={(event) => setTaskFilter(event.target.value)}
+        />
         <div className="min-w-[180px]">
           <Select
             value={actionFilter}
             onValueChange={(value) => setActionFilter(value as ActionFilter)}
           >
             <SelectTrigger>
-          <SelectValue placeholder="Filtrar acción" />
+              <SelectValue placeholder="Filtrar acción" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Todas</SelectItem>
@@ -219,12 +217,14 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
             </SelectContent>
           </Select>
         </div>
-        <Input
-          className="max-w-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-          placeholder="Filtrar por taskId o título"
-          value={taskFilter}
-          onChange={(event) => setTaskFilter(event.target.value)}
-        />
+        <Button
+          variant="secondary"
+          onClick={handleCopy}
+          className="ml-auto border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+        >
+          <Copy className="h-4 w-4" />
+          Copiar resumen
+        </Button>
         {(actionFilter !== "ALL" || taskFilter) && (
           <Button
             variant="ghost"

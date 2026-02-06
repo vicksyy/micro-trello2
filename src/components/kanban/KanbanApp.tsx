@@ -43,10 +43,10 @@ function IconButtonWithTooltip({
       >
         {children}
       </Button>
-      <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-[#0f1f3d] bg-[#0f1f3d] px-2 py-1 text-xs text-white opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
+      <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-[#0f1f3d] bg-[#0f1f3d] px-2 py-1 text-xs text-white opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
         {label}
       </span>
-      <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border border-[#0f1f3d] bg-[#0f1f3d] opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:border-slate-700 dark:bg-slate-100" />
+      <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border border-[#0f1f3d] bg-[#0f1f3d] opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-100" />
     </div>
   );
 }
@@ -226,10 +226,10 @@ export default function KanbanApp() {
                   <FileUp />
                 </span>
               </Button>
-              <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-[#0f1f3d] bg-[#0f1f3d] px-2 py-1 text-xs text-white opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
+              <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-[#0f1f3d] bg-[#0f1f3d] px-2 py-1 text-xs text-white opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
                 Importar JSON
               </span>
-              <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border border-[#0f1f3d] bg-[#0f1f3d] opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:border-slate-700 dark:bg-slate-100" />
+              <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border border-[#0f1f3d] bg-[#0f1f3d] opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-100" />
             </label>
           </div>
         </div>
@@ -257,7 +257,7 @@ export default function KanbanApp() {
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Tareas sin evaluar
                 </p>
-                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                <p className="text-2xl font-semibold text-rose-600 dark:text-rose-400">
                   {
                     state.tasks.filter((task) => typeof task.rubricaScore !== "number")
                       .length
