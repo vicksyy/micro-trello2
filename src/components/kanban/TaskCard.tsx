@@ -212,10 +212,10 @@ export default function TaskCard({
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
             <p className="font-semibold text-slate-700 dark:text-slate-200">
-              Observaciones de Javi
+              Observaciones de Javi:
             </p>
             <p className="mt-1">
-              {task.rubricaComentario?.trim() || "Sin observaciones de Javi."}
+              {task.rubricaComentario?.trim() || "Sin observaciones"}
             </p>
             <p className="mt-2">
               Nota:{" "}
@@ -272,7 +272,7 @@ export default function TaskCard({
             </div>
             <div>
               <p className="font-semibold text-slate-700 dark:text-slate-200">
-                Observaciones de Javi
+                Observaciones de Javi:
               </p>
               <Textarea
                 className="mt-2 min-h-[80px] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"

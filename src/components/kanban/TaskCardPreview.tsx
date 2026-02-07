@@ -92,10 +92,10 @@ export default function TaskCardPreview({
       {showGodMode ? (
         <div className="mt-4 -mx-4 -mb-4 rounded-b-xl border-t border-slate-200 bg-slate-50 px-4 py-3 pb-4 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-300">
           <p className="font-semibold text-slate-700 dark:text-slate-200">
-            Observaciones de Javi
+            Observaciones de Javi:
           </p>
           <p className="mt-1">
-            {task.rubricaComentario?.trim() || "Sin observaciones de Javi."}
+            {task.rubricaComentario?.trim() || "Sin observaciones"}
           </p>
           <p className="mt-2">
             Nota:{" "}

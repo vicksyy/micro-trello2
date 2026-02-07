@@ -15,13 +15,14 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("p-3 pt-4", className)}
       classNames={{
-        caption: "relative flex items-center justify-start pt-1",
-        caption_label: "ml-2 text-sm font-medium",
+        caption: "relative flex items-center justify-start px-8 pt-2 pb-2",
+        caption_label:
+          "w-full pr-10 text-left text-base font-semibold capitalize leading-none",
         nav: "absolute right-2 flex items-center gap-1",
         nav_button: "h-7 w-7 rounded-md border border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100",
-        month: "space-y-2",
+        month: "space-y-3",
         day_selected:
           "bg-slate-900 text-white hover:bg-slate-900 hover:text-white dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-100",
         day_today: "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100",

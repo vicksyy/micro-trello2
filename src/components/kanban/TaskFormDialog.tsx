@@ -20,7 +20,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -40,7 +39,6 @@ import { z } from "zod";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { es } from "date-fns/locale";
-import { FocusScope } from "react-aria";
 
 const taskFormSchema = z.object({
   titulo: z.string().min(3, "Mínimo 3 caracteres"),
@@ -144,18 +142,17 @@ export default function TaskFormDialog({
           titleRef.current?.focus();
         }}
       >
-        <FocusScope contain restoreFocus autoFocus={false}>
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            {description ? (
-              <DialogDescription>{description}</DialogDescription>
-            ) : null}
-          </DialogHeader>
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-4"
-            >
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {description ? (
+            <DialogDescription>{description}</DialogDescription>
+          ) : null}
+        </DialogHeader>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4"
+          >
             <FormField
               control={form.control}
               name="titulo"
@@ -232,7 +229,7 @@ export default function TaskFormDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="todo">Todo</SelectItem>
+                        <SelectItem value="todo">To Do</SelectItem>
                         <SelectItem value="doing">Doing</SelectItem>
                         <SelectItem value="done">Done</SelectItem>
                       </SelectContent>
@@ -264,6 +261,7 @@ export default function TaskFormDialog({
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
+                            type="button"
                             variant="outline"
                             className={cn(
                               "w-full justify-start text-left font-normal",
@@ -343,9 +341,9 @@ export default function TaskFormDialog({
                   name="rubricaComentario"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Observaciones</FormLabel>
+                      <FormLabel>Observaciones de Javi</FormLabel>
                       <FormControl>
-                        <Input placeholder="Observaciones rapidas" {...field} />
+                        <Input placeholder="Observaciones rápidas" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -364,9 +362,8 @@ export default function TaskFormDialog({
                 Guardar
               </Button>
             </div>
-            </form>
-          </Form>
-        </FocusScope>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
