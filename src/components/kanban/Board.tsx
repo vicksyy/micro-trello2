@@ -19,7 +19,6 @@ import { writeState } from "@/lib/storage";
 import { AuditEvent, BoardState, Task, TaskStatus } from "@/types";
 import {
   DndContext,
-  DragCancelEvent,
   DragEndEvent,
   DragStartEvent,
   DragOverlay,
@@ -326,7 +325,7 @@ export default function Board({
     const sourceTasks = tasksByStatus[previousTask.estado]
       .filter((task) => task.id !== taskId)
       .map((task) => task.id);
-    let targetTasks = tasksByStatus[nextStatus].map((task) => task.id);
+    const targetTasks = tasksByStatus[nextStatus].map((task) => task.id);
     if (overTask) {
       const overIndex = targetTasks.indexOf(overTask.id);
       if (overIndex >= 0) {
@@ -416,7 +415,7 @@ export default function Board({
     }
   };
 
-  const handleDragCancel = (_event: DragCancelEvent) => {
+  const handleDragCancel = () => {
     setActiveTaskId(null);
     setOverlaySize(null);
   };

@@ -62,10 +62,15 @@ export default function TaskCard({
   );
 
   useEffect(() => {
-    setNota(
-      typeof task.rubricaScore === "number" ? String(task.rubricaScore) : ""
-    );
-    setObservaciones(task.rubricaComentario ?? "");
+    const timeoutId = window.setTimeout(() => {
+      setNota(
+        typeof task.rubricaScore === "number" ? String(task.rubricaScore) : ""
+      );
+      setObservaciones(task.rubricaComentario ?? "");
+    }, 0);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [task.rubricaScore, task.rubricaComentario]);
 
   const dirty =

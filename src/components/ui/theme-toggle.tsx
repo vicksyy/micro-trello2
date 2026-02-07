@@ -14,8 +14,13 @@ export default function ThemeToggle() {
     const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")
       .matches;
     const enabled = stored ? stored === "dark" : Boolean(prefersDark);
-    setDarkMode(enabled);
-    document.documentElement.classList.toggle("dark", enabled);
+    const timeoutId = window.setTimeout(() => {
+      setDarkMode(enabled);
+      document.documentElement.classList.toggle("dark", enabled);
+    }, 0);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   useEffect(() => {

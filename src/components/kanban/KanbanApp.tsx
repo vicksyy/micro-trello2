@@ -58,8 +58,14 @@ export default function KanbanApp() {
   const [state, setState] = useState<BoardState | null>(null);
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [tabValue, setTabValue] = useState("board");
+
   useEffect(() => {
-    setState(getInitialState());
+    const timeoutId = window.setTimeout(() => {
+      setState(getInitialState());
+    }, 0);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   const setBoardState: React.Dispatch<React.SetStateAction<BoardState>> = (
@@ -164,7 +170,7 @@ export default function KanbanApp() {
         };
       });
       toast.success("Importación completada");
-    } catch (error) {
+    } catch {
       setImportErrors(["No se pudo leer el archivo JSON."]);
     }
   };

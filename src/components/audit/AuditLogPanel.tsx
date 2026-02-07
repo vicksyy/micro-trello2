@@ -17,9 +17,9 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { AuditAction, AuditEvent } from "@/types";
-import { ArrowRight, Check, ChevronDown, Copy, Filter, X } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Copy, X } from "lucide-react";
 import { toast } from "sonner";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 type AuditLogPanelProps = {
   auditLog: AuditEvent[];
@@ -73,15 +73,15 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
 
   const shortId = (id: string) => id.slice(0, 8);
 
-  const getTitleFromEvent = (event: AuditEvent) => {
+  const getTitleFromEvent = useCallback((event: AuditEvent) => {
     const before = event.diff.before as Partial<Record<string, unknown>> | undefined;
     const after = event.diff.after as Partial<Record<string, unknown>> | undefined;
     const beforeTitle = typeof before?.titulo === "string" ? before.titulo : "";
     const afterTitle = typeof after?.titulo === "string" ? after.titulo : "";
     return afterTitle || beforeTitle || titleById.get(event.taskId) || "";
-  };
+  }, [titleById]);
 
-  const getDiffKeys = (event: AuditEvent) => {
+  const getDiffKeys = useCallback((event: AuditEvent) => {
     if (event.accion === "DELETE" || event.accion === "CREATE") {
       return ["__event__"];
     }
@@ -94,11 +94,10 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
         return JSON.stringify(beforeValue) !== JSON.stringify(afterValue);
       }
     );
-  };
-
-  const hasDiffChanges = (event: AuditEvent) => getDiffKeys(event).length > 0;
+  }, []);
 
   const filteredLog = useMemo(() => {
+    const hasDiffChanges = (event: AuditEvent) => getDiffKeys(event).length > 0;
     const filtered = auditLog.filter((event) => {
       const matchAction =
         actionFilter === "ALL" ? true : event.accion === actionFilter;
@@ -124,6 +123,8 @@ export default function AuditLogPanel({ auditLog, tasks }: AuditLogPanelProps) {
     taskFilter,
     diffFilter,
     sortOrder,
+    getTitleFromEvent,
+    getDiffKeys,
   ]);
 
 
