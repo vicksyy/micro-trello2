@@ -57,6 +57,47 @@ npm start
 
 ![Captura 3 - Crear tarea](./public/Captura_tarea.png)
 
+## Checklist de requisitos
+
+Funcionales:
+- [x] Kanban con 3 columnas fijas (`To Do`, `Doing`, `Done`)
+- [x] Crear, editar y borrar tareas
+- [x] Modelo de tarea con `id`, `titulo`, `descripcion`, `prioridad`, `tags`, `estimacionMin`, `fechaCreacion`, `fechaLimite`, `estado`
+- [x] Drag & Drop entre columnas
+- [x] Log de auditoría con `timestamp`, `accion`, `taskId`, `diff`, `userLabel: "Alumno/a"`
+- [x] Vista de auditoría en tabla con filtros por acción y por tarea (`taskId`/título)
+- [x] Botón `Copiar resumen` en auditoría
+- [x] Persistencia de tablero + auditoría en `localStorage`
+- [x] Exportar JSON
+- [x] Importar JSON con validación y alerta de errores
+- [x] Evitar IDs duplicados/incorrectos en importación
+- [x] `Modo Dios`: observaciones por tarea, rúbrica rápida (0–10) y comentarios
+- [x] Búsqueda avanzada completa con operadores: `tag:`, `p:`, `due:`, `est:<...` / `est:>=...`
+- [x] UI de ayuda con ejemplos de operadores (Tooltip/Popover)
+
+Técnicos:
+- [x] UI con componentes Shadcn (Dialog, Form, Select, Badge, Tabs, Table, Sonner, AlertDialog)
+- [x] Empty states visibles y con diseño
+- [x] TypeScript sin `any`
+- [x] Validación con Zod
+- [x] Separación base por capas (`types.ts`, `lib/storage.ts`, `lib/query.ts`, componentes)
+- [x] Atajos y navegación por teclado (crear, buscar y mover tareas)
+- [x] Gestión de foco al abrir/cerrar modales
+- [x] `aria-label` en acciones principales
+- [x] Estados de foco visibles/contraste usable
+
+GitHub/entrega:
+- [x] Mínimo 10 commits con mensajes significativos
+- [x] README completo
+
+## Decisiones técnicas
+
+Se utilizó una estructura por partes para facilitar el mantenimiento.
+La búsqueda separa las palabras y filtra las tareas.
+El filtrado solo se actualiza cuando hay cambios relevantes, para mejorar el rendimiento.
+La auditoría registra el estado anterior y posterior de cada acción en una tabla clara.
+La información se guarda en localStorage y, al importar, se revisa y corrige el formato si es necesario.
+
 ## Stack
 
 - Next.js
